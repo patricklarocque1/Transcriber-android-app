@@ -52,3 +52,9 @@ Hands-free, on-the-go translation. The Wear OS app captures nearby speech and st
 
 MIT (change as you like).
 
+## Docs
+
+- Architecture: `docs/architecture.md`
+- Provider Contracts: `docs/providers.md`
+- Testing: `docs/testing.md`
+- Privacy & Permissions: `docs/privacy-and-permissions.md`
