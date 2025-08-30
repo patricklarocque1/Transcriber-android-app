@@ -58,3 +58,11 @@ MIT (change as you like).
 - Provider Contracts: `docs/providers.md`
 - Testing: `docs/testing.md`
 - Privacy & Permissions: `docs/privacy-and-permissions.md`
+
+## Codex Prompts
+
+- Bootstrap scaffold: `codex/BOOTSTRAP.md`
+- Feature tasks: `codex/TASKS_FEATURES.md`
+- Cloud guards: `codex/TASKS_CLOUD_GUARDS.md`
+- Tests & CI hardening: `codex/TASKS_TESTS.md`
+- Hotfix playbook: `codex/HOTFIX_PLAYBOOK.md`
