@@ -1,0 +1,101 @@
+name: Android CI + Codex
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: |
+            platform-tools
+            cmdline-tools;latest
+            platforms;android-35
+            build-tools;35.0.0
+
+      - name: Accept licenses
+        run: yes | sdkmanager --licenses
+
+      - name: Gradle (offline flavor)
+        run: ./gradlew :app:assembleOfflineDebug :wear:assembleOfflineDebug :app:testOfflineDebug
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wristlingo-debug-apks
+          path: |
+            app/build/outputs/**/*.apk
+            wear/build/outputs/**/*.apk
+
+  codex_auto_pr:
+    if: ${{ github.event_name == 'pull_request' }}
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Codex CLI
+        run: npm i -g @openai/codex
+
+      - name: Configure git author
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name  "github-actions[bot]"
+
+      - name: Run Codex to propose tests/fixes
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          set -e
+          BRANCH="codex/${{ github.event.pull_request.number }}"
+          git checkout -b "$BRANCH"
+          codex --approval-mode full-auto --no-terminal --quiet \
+            "Read the diff for this PR. If tests or lint fixes are missing, add them. 
+             Ensure Data Layer message parsing has tests.
+             Do not change product scope or add large dependencies."
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(codex): tests/lint fixes for PR #${{ github.event.pull_request.number }}"
+            git push --force --set-upstream origin "$BRANCH"
+          fi
+
+      - name: Open PR with Codex changes
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          base: ${{ github.head_ref }}
+          branch: ${{ github.ref_name }}
+          title: "Codex: tests/lint fixes for PR #${{ github.event.pull_request.number }}"
+          body: "Automated suggestions from Codex CLI."
+
