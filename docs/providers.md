@@ -16,6 +16,12 @@ Implementations:
 * `WhisperCppProvider` (JNI bridge; Tiny/Small models selectable; offline).
 * `CloudSttV2Provider` (REST; disabled unless flag set).
 
+Notes:
+- `WhisperCppProvider` is scaffolded but not active in this build. To enable:
+  1) Add an NDK toolchain and CMake, create a JNI bridge that streams PCM into whisper.cpp.
+  2) Use app-private storage (e.g., `filesDir/whisper/models`) for model packs.
+  3) Provide a minimal model manager to download and verify GGML/GGUF models.
+
 ## TranslationProvider
 
 ```kotlin
@@ -29,4 +35,3 @@ Implementations:
 
 * `MlKitTranslationProvider` (download packs on demand).
 * `CloudTranslationProvider` (REST; off by default).
-

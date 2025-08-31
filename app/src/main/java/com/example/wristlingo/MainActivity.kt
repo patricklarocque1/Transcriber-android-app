@@ -36,6 +36,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import kotlinx.coroutines.launch
+import android.net.Uri
+import androidx.activity.result.contract.ActivityResultContracts.CreateDocument
+import com.example.wristlingo.data.db.AppDatabase
+import com.example.wristlingo.export.exportSessions
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -59,6 +63,7 @@ private fun HomeScreen() {
   val targetLangPref = (prefs?.get(Keys.targetLang) ?: "es")
   val redact = (prefs?.get(Keys.redact) ?: false)
   val tts = (prefs?.get(Keys.tts) ?: false)
+  val db = remember { AppDatabase.get(context) }
 
   // Observe caption updates from the service via AppBus
   LaunchedEffect(Unit) {
@@ -99,6 +104,11 @@ private fun HomeScreen() {
       OutlinedButton(onClick = { scope.launch { store.setProvider("fake") } }) { Text("Fake") }
       Spacer(Modifier.width(8.dp))
       OutlinedButton(onClick = { scope.launch { store.setProvider("system") } }) { Text("System") }
+      Spacer(Modifier.width(8.dp))
+      OutlinedButton(onClick = { scope.launch {
+        store.setProvider("whisper");
+        Toast.makeText(context, "Whisper provider not available in this build", Toast.LENGTH_SHORT).show()
+      } }) { Text("Whisper (stub)") }
     }
     // Target language
     var lang by remember(targetLangPref) { mutableStateOf(targetLangPref) }
@@ -144,6 +154,12 @@ private fun HomeScreen() {
     }) {
       Text("Stop")
     }
+
+    // Export sessions (JSONL via SAF)
+    val exportLauncher = rememberLauncherForActivityResult(CreateDocument("application/json")) { uri: Uri? ->
+      if (uri != null) scope.launch { exportSessions(context, db, uri) }
+    }
+    OutlinedButton(onClick = { exportLauncher.launch("wristlingo-sessions.jsonl") }) { Text("Export Sessions") }
   }
 }
 

@@ -5,7 +5,7 @@ plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
-  alias(libs.plugins.android.kapt)
+  alias(libs.plugins.ksp)
 }
 
 // Optional release signing driven by keystore.properties (not committed)
@@ -93,10 +93,12 @@ dependencies {
   // Wearable Data Layer
   implementation(libs.play.services.wearable)
 
-  // Room database
+  // Room database (KSP)
   implementation(libs.androidx.room.runtime)
   implementation(libs.androidx.room.ktx)
-  kapt(libs.androidx.room.compiler)
+  ksp(libs.androidx.room.compiler)
+  kspTest(libs.androidx.room.compiler)
+  kspAndroidTest(libs.androidx.room.compiler)
 
   // Preferences DataStore
   implementation(libs.androidx.datastore.preferences)

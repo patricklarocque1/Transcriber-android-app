@@ -5,7 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [Session::class, Utterance::class], version = 1)
+@Database(entities = [Session::class, Utterance::class], version = 1, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
   abstract fun sessionDao(): SessionDao
   abstract fun utteranceDao(): UtteranceDao
@@ -17,4 +17,3 @@ abstract class AppDatabase : RoomDatabase() {
     }
   }
 }
-

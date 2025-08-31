@@ -12,6 +12,9 @@ interface SessionDao {
 
   @Query("UPDATE session SET ended_at = :end WHERE id = :id")
   suspend fun end(id: Long, end: Long)
+
+  @Query("SELECT * FROM session ORDER BY started_at DESC")
+  suspend fun all(): List<Session>
 }
 
 @Dao
@@ -22,4 +25,3 @@ interface UtteranceDao {
   @Query("SELECT * FROM utterance WHERE session_id = :session ORDER BY ts ASC")
   suspend fun bySession(session: Long): List<Utterance>
 }
-

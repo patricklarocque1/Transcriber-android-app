@@ -75,13 +75,14 @@ Notes:
   - System SpeechRecognizer ASR (mic)
 - Translation via ML Kit with on-demand model download/caching.
 - Room database for Sessions and Utterances; optional PII redaction.
+- Export sessions (JSONL) via the "Export Sessions (JSONL)" launcher icon or the in-app button.
 - TTS playback (phone) toggle.
 - Data Layer messaging (MessageClient): phone broadcasts caption updates to Wear; Wear can start/stop sessions.
 - Simple settings UI (provider, target language, redaction, TTS).
 
 ## Remaining work
 
-- Whisper.cpp JNI provider (offline ASR) and selection.
+- Whisper.cpp JNI provider (offline ASR) and selection — scaffolding class `WhisperCppProvider` is present, JNI/NDK integration pending.
 - Export/import of sessions (JSONL) and redaction utilities UI.
 - DataClient assets for large audio payloads; audio from watch→phone path.
 - Full settings navigation and permissions education copy.

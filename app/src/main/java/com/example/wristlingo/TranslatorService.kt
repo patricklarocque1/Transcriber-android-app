@@ -141,7 +141,11 @@ class TranslatorService : Service() {
         if (ttsEnabled) tts?.speak(translated, android.speech.tts.TextToSpeech.QUEUE_ADD, null, "utt-${System.currentTimeMillis()}")
       }
 
-      if (providerId == "system" && SpeechRecognizer.isRecognitionAvailable(this@TranslatorService)) {
+      if (providerId == "whisper") {
+        AppBus.captions.tryEmit("Whisper provider not available in this build")
+        // Keep service alive briefly then stop
+        delay(1500)
+      } else if (providerId == "system" && SpeechRecognizer.isRecognitionAvailable(this@TranslatorService)) {
         val asr = SystemSpeechRecognizerProvider(this@TranslatorService).also { p ->
           p.setListener { part -> serviceScope.launch { handleText(part.text, part.isFinal) } }
         }
