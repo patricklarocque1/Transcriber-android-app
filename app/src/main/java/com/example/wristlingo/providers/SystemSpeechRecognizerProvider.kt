@@ -18,11 +18,14 @@ class SystemSpeechRecognizerProvider(private val context: Context) : AsrProvider
   private val mainHandler = Handler(Looper.getMainLooper())
   private var running = false
   private var currentIntent: Intent? = null
+  private var listening = false
+  private var lastTranscript: String? = null
 
   override fun start(sampleRate: Int, languageHint: String?) {
     language = languageHint
     if (!SpeechRecognizer.isRecognitionAvailable(context)) return
     running = true
+    lastTranscript = null
     runOnMain {
       AppBus.asrState.value = "starting"
       recognizer = SpeechRecognizer.createSpeechRecognizer(context).apply {
@@ -31,9 +34,13 @@ class SystemSpeechRecognizerProvider(private val context: Context) : AsrProvider
           override fun onBeginningOfSpeech() { AppBus.asrState.value = "listening" }
           override fun onRmsChanged(rmsdB: Float) {}
           override fun onBufferReceived(buffer: ByteArray?) {}
-          override fun onEndOfSpeech() { AppBus.asrState.value = "processing" }
+          override fun onEndOfSpeech() {
+            AppBus.asrState.value = "processing"
+            listening = false
+          }
           override fun onError(error: Int) {
             AppBus.asrState.value = "error"
+            listening = false
             // Attempt to recover by restarting listening shortly after
             if (running) {
               mainHandler.postDelayed({ restartListening() }, 350)
@@ -42,17 +49,24 @@ class SystemSpeechRecognizerProvider(private val context: Context) : AsrProvider
           override fun onPartialResults(partialResults: Bundle?) {
             val list = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
             val text = list?.firstOrNull()
-            if (!text.isNullOrBlank()) listener?.invoke(AsrProvider.Partial(text, false))
+            if (!text.isNullOrBlank() && text != lastTranscript) {
+              listener?.invoke(AsrProvider.Partial(text, false))
+              lastTranscript = text
+            }
           }
           override fun onEvent(eventType: Int, params: Bundle?) {}
           override fun onResults(results: Bundle?) {
             val list = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
             val text = list?.firstOrNull()
-            if (!text.isNullOrBlank()) listener?.invoke(AsrProvider.Partial(text, true))
+            if (!text.isNullOrBlank() && text != lastTranscript) {
+              listener?.invoke(AsrProvider.Partial(text, true))
+              lastTranscript = text
+            }
+            listening = false
             // Re-arm for continuous recognition
             if (running) {
               AppBus.asrState.value = "ready"
-              restartListening()
+              mainHandler.postDelayed({ restartListening() }, 350)
             } else {
               AppBus.asrState.value = "idle"
             }
@@ -73,6 +87,7 @@ class SystemSpeechRecognizerProvider(private val context: Context) : AsrProvider
         }
         currentIntent = intent
         startListening(intent)
+        listening = true
       }
     }
   }
@@ -81,6 +96,8 @@ class SystemSpeechRecognizerProvider(private val context: Context) : AsrProvider
 
   override fun finalizeStream(): String {
     running = false
+    listening = false
+    lastTranscript = null
     runOnMain { recognizer?.stopListening() }
     AppBus.asrState.value = "idle"
     return ""
@@ -88,6 +105,8 @@ class SystemSpeechRecognizerProvider(private val context: Context) : AsrProvider
 
   override fun close() {
     running = false
+    listening = false
+    lastTranscript = null
     runOnMain {
       recognizer?.destroy()
       recognizer = null
@@ -102,13 +121,18 @@ class SystemSpeechRecognizerProvider(private val context: Context) : AsrProvider
   }
 
   private fun restartListening() {
+    if (listening) return
     val r = recognizer ?: return
     val intent = currentIntent ?: return
+    lastTranscript = null
     try {
       r.cancel()
     } catch (_: Throwable) {}
     try {
       r.startListening(intent)
-    } catch (_: Throwable) {}
+      listening = true
+    } catch (_: Throwable) {
+      listening = false
+    }
   }
 }
