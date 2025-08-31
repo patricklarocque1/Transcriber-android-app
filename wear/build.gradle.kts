@@ -1,8 +1,20 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
+
 plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
 }
+
+// Optional release signing driven by keystore.properties (not committed)
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties().apply {
+  if (keystorePropertiesFile.exists()) {
+    load(keystorePropertiesFile.inputStream())
+  }
+}
+val hasKeystore = keystorePropertiesFile.exists()
 
 android {
   namespace = "com.example.wristlingo.wear"
@@ -16,6 +28,17 @@ android {
     versionName = "0.1.0"
   }
 
+  signingConfigs {
+    if (hasKeystore) {
+      create("release") {
+        storeFile = file(keystoreProperties["storeFile"] as String)
+        storePassword = keystoreProperties["storePassword"] as String
+        keyAlias = keystoreProperties["keyAlias"] as String
+        keyPassword = keystoreProperties["keyPassword"] as String
+      }
+    }
+  }
+
   buildTypes {
     release {
       isMinifyEnabled = false
@@ -23,6 +46,9 @@ android {
         getDefaultProguardFile("proguard-android-optimize.txt"),
         file("proguard-rules.pro")
       )
+      if (hasKeystore) {
+        signingConfig = signingConfigs.getByName("release")
+      }
     }
   }
 
@@ -54,10 +80,7 @@ dependencies {
 
 kotlin {
   jvmToolchain(17)
-}
-
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-  kotlinOptions {
-    jvmTarget = "17"
+  compilerOptions {
+    jvmTarget.set(JvmTarget.JVM_17)
   }
 }
