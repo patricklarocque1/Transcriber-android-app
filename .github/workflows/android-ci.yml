@@ -58,6 +58,8 @@ jobs:
     if: ${{ github.event_name == 'pull_request' }}
     needs: build
     runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
@@ -76,27 +78,32 @@ jobs:
           git config user.name  "github-actions[bot]"
 
       - name: Run Codex to propose tests/fixes
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        id: codex_run
+        if: ${{ env.OPENAI_API_KEY != '' }}
         run: |
           set -e
           BRANCH="codex/${{ github.event.pull_request.number }}"
+          # Create a working branch for Codex suggestions
           git checkout -b "$BRANCH"
           codex --approval-mode full-auto --no-terminal --quiet \
-            "Read the diff for this PR. If tests or lint fixes are missing, add them. 
+            "Read the diff for this PR. If tests or lint fixes are missing, add them.
              Ensure Data Layer message parsing has tests.
              Do not change product scope or add large dependencies."
           git add -A
           if ! git diff --cached --quiet; then
             git commit -m "chore(codex): tests/lint fixes for PR #${{ github.event.pull_request.number }}"
             git push --force --set-upstream origin "$BRANCH"
+            echo "pushed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "pushed=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Open PR with Codex changes
+        if: ${{ steps.codex_run.outputs.pushed == 'true' }}
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          base: ${{ github.head_ref }}
-          branch: ${{ github.ref_name }}
+          base: ${{ github.base_ref }}
+          branch: codex/${{ github.event.pull_request.number }}
           title: "Codex: tests/lint fixes for PR #${{ github.event.pull_request.number }}"
-          body: "Automated suggestions from Codex CLI."
+          body: "Automated suggestions from Codex CLI based on PR #${{ github.event.pull_request.number }}."
