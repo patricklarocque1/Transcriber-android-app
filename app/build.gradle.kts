@@ -40,18 +40,18 @@ android {
     listOf("META-INF/AL2.0", "META-INF/LGPL2.1")
 }
 
-dependencies {
-  implementation(platform(libs.compose.bom))
-  implementation(libs.androidx.core.ktx)
-  implementation(libs.androidx.lifecycle.runtime.ktx)
-  implementation(libs.androidx.activity.compose)
-  implementation(libs.compose.ui)
-  implementation(libs.compose.ui.tooling.preview)
-  implementation(libs.compose.material3)
+  dependencies {
+    implementation(platform(libs.compose.bom))
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.google.material)
+    implementation(libs.compose.ui)
+    implementation(libs.compose.ui.tooling.preview)
+    implementation(libs.compose.material3)
 
   androidTestImplementation(platform(libs.compose.bom))
   androidTestImplementation(libs.compose.ui.test.junit4)
   debugImplementation(libs.compose.ui.tooling)
   debugImplementation(libs.compose.ui.test.manifest)
 }
-
