@@ -19,6 +19,15 @@ Commands:
 
 Artifacts are under `app/build/outputs/apk/**` and `wear/build/outputs/apk/**`.
 
+## Quick test drive
+
+The current build ships with a simple, fake end-to-end path so you can verify the app scaffolding without real ASR/translation models.
+
+- Phone app only: launch `WristLingo`, press Start. You’ll be prompted for notifications on Android 13+. The foreground service will emit simulated captions every ~150 ms and display translated text like "Hello world [es]". Press Stop to end.
+- Wear app is a minimal launcher for now.
+
+No microphone access is used in this test mode.
+
 ## Release signing
 
 Both modules read optional signing config from `keystore.properties` at the repo root. Template: `keystore.properties.example`.
@@ -54,3 +63,18 @@ Workflow: `.github/workflows/android.yml`.
 Notes:
 - CI overwrites `local.properties` to point at the CI SDK.
 - If you prefer not to auto-download JDKs, install OpenJDK 17 and set `org.gradle.java.home` in `gradle.properties`.
+
+## What’s missing (scaffold vs. product)
+
+This repo is intentionally a skeleton. For a production-ready experience, the following are outstanding:
+
+- Data Layer messaging between Wear and Phone (MessageClient + DataClient) per `docs/architecture.md`.
+- Real `AsrProvider` implementations (Android SpeechRecognizer, Whisper.cpp JNI) and selection UI.
+- Real `TranslationProvider` (ML Kit) with on-demand model downloads and caching.
+- Foreground audio capture pipeline using `AudioRecord`, buffering, and backpressure control.
+- Room database (Session, Utterance) with export/import and redaction utilities.
+- Settings screens for provider selection, permissions, privacy toggles.
+- TTS playback pipeline on Phone and Wear.
+- Instrumented tests and snapshot tests per `docs/testing.md`.
+
+For quick validation, a "fake" ASR and Translation are wired inside the foreground service to simulate streaming captions.

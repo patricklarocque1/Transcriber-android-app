@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+  <!-- Required base permission for any Foreground Service -->
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+  <!-- Required for foregroundServiceType="dataSync" on modern Android -->
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+  <!-- No microphone use in test mode; keep to base FGS only -->
+  <!-- Needed on Android 13+ to show foreground notification -->
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
   <application
       android:allowBackup="true"
       android:label="WristLingo"
@@ -19,7 +27,7 @@
     <service
         android:name=".TranslatorService"
         android:exported="false"
-        android:foregroundServiceType="microphone">
+        android:foregroundServiceType="dataSync">
     </service>
   </application>
 
