@@ -119,6 +119,8 @@ dependencies {
 
   // WorkManager for background tasks
   implementation(libs.androidx.work.runtime.ktx)
+  // Lifecycle Process for ProcessLifecycleOwner
+  implementation(libs.androidx.lifecycle.process)
 }
 
 kotlin {

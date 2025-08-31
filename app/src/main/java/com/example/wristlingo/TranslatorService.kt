@@ -66,7 +66,7 @@ class TranslatorService : Service() {
     runningJob?.cancel()
     wear.stop()
     tts?.shutdown()
-    stopForeground(STOP_FOREGROUND_REMOVE)
+    stopForeground(Service.STOP_FOREGROUND_REMOVE)
     super.onDestroy()
   }
 
@@ -236,7 +236,7 @@ class TranslatorService : Service() {
 
   private fun stopSimulation() {
     runningJob?.cancel()
-    stopForeground(STOP_FOREGROUND_REMOVE)
+    stopForeground(Service.STOP_FOREGROUND_REMOVE)
     stopSelf()
     isForeground = false
     Log.i(TAG, "Service stopped")
