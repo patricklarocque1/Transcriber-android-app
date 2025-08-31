@@ -64,6 +64,7 @@ class TranslatorService : Service() {
     runningJob?.cancel()
     wear.stop()
     tts?.shutdown()
+    stopForeground(STOP_FOREGROUND_REMOVE)
     super.onDestroy()
   }
 
@@ -119,7 +120,12 @@ class TranslatorService : Service() {
         return START_NOT_STICKY
       }
     }
-    return START_STICKY
+    return START_NOT_STICKY
+  }
+
+  override fun onTaskRemoved(rootIntent: Intent?) {
+    stopSimulation()
+    super.onTaskRemoved(rootIntent)
   }
 
   private fun startWork() {
