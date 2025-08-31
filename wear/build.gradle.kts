@@ -76,6 +76,9 @@ dependencies {
   implementation(libs.wear.compose.material)
   implementation(libs.wear.compose.foundation)
   debugImplementation(libs.compose.ui.tooling)
+
+  // Wearable Data Layer
+  implementation(libs.play.services.wearable)
 }
 
 kotlin {

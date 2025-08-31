@@ -21,12 +21,16 @@ Artifacts are under `app/build/outputs/apk/**` and `wear/build/outputs/apk/**`.
 
 ## Quick test drive
 
-The current build ships with a simple, fake end-to-end path so you can verify the app scaffolding without real ASR/translation models.
+Phone:
+- Open `WristLingo` and configure at the top:
+  - ASR Provider: `Fake` (no mic) or `System` (Android SpeechRecognizer, uses mic).
+  - Target language (e.g., `es`).
+  - Toggles: Redact PII, TTS.
+- Tap Start. On Android 13+, allow Notifications. If you chose `System`, also allow Microphone.
+- You’ll see a persistent notification and live captions. Tap Stop to end.
 
-- Phone app only: launch `WristLingo`, press Start. You’ll be prompted for notifications on Android 13+. The foreground service will emit simulated captions every ~150 ms and display translated text like "Hello world [es]". Press Stop to end.
-- Wear app is a minimal launcher for now.
-
-No microphone access is used in this test mode.
+Wear:
+- Launch `WristLingo` on the watch. Use Start/Stop to control the phone. Captions arrive in near‑real time.
 
 ## Release signing
 
@@ -64,17 +68,21 @@ Notes:
 - CI overwrites `local.properties` to point at the CI SDK.
 - If you prefer not to auto-download JDKs, install OpenJDK 17 and set `org.gradle.java.home` in `gradle.properties`.
 
-## What’s missing (scaffold vs. product)
+## Implemented features
 
-This repo is intentionally a skeleton. For a production-ready experience, the following are outstanding:
+- Foreground service with two modes:
+  - Fake ASR (no mic) + AudioRecord demo path
+  - System SpeechRecognizer ASR (mic)
+- Translation via ML Kit with on-demand model download/caching.
+- Room database for Sessions and Utterances; optional PII redaction.
+- TTS playback (phone) toggle.
+- Data Layer messaging (MessageClient): phone broadcasts caption updates to Wear; Wear can start/stop sessions.
+- Simple settings UI (provider, target language, redaction, TTS).
 
-- Data Layer messaging between Wear and Phone (MessageClient + DataClient) per `docs/architecture.md`.
-- Real `AsrProvider` implementations (Android SpeechRecognizer, Whisper.cpp JNI) and selection UI.
-- Real `TranslationProvider` (ML Kit) with on-demand model downloads and caching.
-- Foreground audio capture pipeline using `AudioRecord`, buffering, and backpressure control.
-- Room database (Session, Utterance) with export/import and redaction utilities.
-- Settings screens for provider selection, permissions, privacy toggles.
-- TTS playback pipeline on Phone and Wear.
-- Instrumented tests and snapshot tests per `docs/testing.md`.
+## Remaining work
 
-For quick validation, a "fake" ASR and Translation are wired inside the foreground service to simulate streaming captions.
+- Whisper.cpp JNI provider (offline ASR) and selection.
+- Export/import of sessions (JSONL) and redaction utilities UI.
+- DataClient assets for large audio payloads; audio from watch→phone path.
+- Full settings navigation and permissions education copy.
+- Instrumented loopback tests and Compose snapshot tests.

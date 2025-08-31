@@ -4,6 +4,7 @@ class FakeAsrProvider : AsrProvider {
   private var started = false
   private var frames = 0
   private var partialIdx = 0
+  private var listener: ((AsrProvider.Partial) -> Unit)? = null
   private val steps = listOf(
     "hello",
     "hello world",
@@ -25,7 +26,9 @@ class FakeAsrProvider : AsrProvider {
       val text = steps[partialIdx]
       partialIdx++
       val isFinal = partialIdx >= steps.size
-      AsrProvider.Partial(text, isFinal)
+      val p = AsrProvider.Partial(text, isFinal)
+      listener?.invoke(p)
+      p
     } else null
   }
 
@@ -35,5 +38,8 @@ class FakeAsrProvider : AsrProvider {
   }
 
   override fun close() { started = false }
-}
 
+  override fun setListener(listener: ((AsrProvider.Partial) -> Unit)?) {
+    this.listener = listener
+  }
+}

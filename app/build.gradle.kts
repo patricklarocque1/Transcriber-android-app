@@ -5,6 +5,7 @@ plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
+  alias(libs.plugins.android.kapt)
 }
 
 // Optional release signing driven by keystore.properties (not committed)
@@ -88,6 +89,20 @@ dependencies {
   
   // Coroutines for simple in-app event bus and service work
   implementation(libs.kotlinx.coroutines.android)
+
+  // Wearable Data Layer
+  implementation(libs.play.services.wearable)
+
+  // Room database
+  implementation(libs.androidx.room.runtime)
+  implementation(libs.androidx.room.ktx)
+  kapt(libs.androidx.room.compiler)
+
+  // Preferences DataStore
+  implementation(libs.androidx.datastore.preferences)
+
+  // ML Kit: on-device translation
+  implementation(libs.mlkit.translate)
 }
 
 kotlin {
