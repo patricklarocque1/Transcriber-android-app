@@ -5,7 +5,7 @@
       android:allowBackup="true"
       android:label="WristLingo"
       android:supportsRtl="true"
-      android:theme="@style/Theme.Material3.DayNight.NoActionBar">
+      android:theme="@style/Theme.WristLingo">
 
     <activity
         android:name=".MainActivity"
@@ -24,4 +24,3 @@
   </application>
 
 </manifest>
-

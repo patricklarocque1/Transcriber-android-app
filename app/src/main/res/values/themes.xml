@@ -1,0 +1,8 @@
+<resources>
+  <style name="Theme.WristLingo" parent="Theme.Material3.DayNight">
+    <!-- Minimal overrides; Compose screens don’t need ActionBar -->
+    <item name="android:statusBarColor">@android:color/transparent</item>
+    <item name="android:navigationBarColor">@android:color/black</item>
+  </style>
+</resources>
+
