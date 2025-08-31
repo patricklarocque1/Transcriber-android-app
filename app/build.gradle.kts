@@ -116,6 +116,9 @@ dependencies {
 
   // OkHttp for model downloads
   implementation(libs.okhttp)
+
+  // WorkManager for background tasks
+  implementation(libs.androidx.work.runtime.ktx)
 }
 
 kotlin {
