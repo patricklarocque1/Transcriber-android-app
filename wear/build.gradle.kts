@@ -35,6 +35,11 @@ android {
 
   buildFeatures { compose = true }
   packaging.resources.excludes += listOf("META-INF/AL2.0", "META-INF/LGPL2.1")
+
+  compileOptions {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+  }
 }
 
 dependencies {
@@ -47,3 +52,12 @@ dependencies {
   debugImplementation(libs.compose.ui.tooling)
 }
 
+kotlin {
+  jvmToolchain(17)
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+  kotlinOptions {
+    jvmTarget = "17"
+  }
+}
