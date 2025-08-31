@@ -1,7 +1,7 @@
 package com.example.wristlingo.tts
 
-import android.content.Context
 import android.speech.tts.TextToSpeech
+import android.speech.tts.Voice as TtsVoice
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
@@ -11,28 +11,32 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import java.util.Locale
-import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun VoicePicker(targetLang: String, savedVoice: String?, onChoose: (String?) -> Unit) {
-  var tts by remember { mutableStateOf<TextToSpeech?>(null) }
-  var voices by remember { mutableStateOf(emptyList<TextToSpeech.Voice>()) }
+  val context = LocalContext.current
+  var voices by remember { mutableStateOf<List<TtsVoice>>(emptyList()) }
   var expanded by remember { mutableStateOf(false) }
 
-  DisposableEffect(targetLang) {
-    val engine = TextToSpeech(LocalContext.current) { status ->
-      if (status == TextToSpeech.SUCCESS) {
-        val list = engine.voices?.filter { v ->
-          val tag = v.locale?.toLanguageTag()?.lowercase(Locale.ROOT) ?: ""
-          tag.startsWith(targetLang.lowercase(Locale.ROOT))
-        }?.sortedBy { it.name } ?: emptyList()
+  DisposableEffect(targetLang, context) {
+    var engineRef: TextToSpeech? = null
+    engineRef = TextToSpeech(context) { status ->
+      val eng = engineRef
+      if (status == TextToSpeech.SUCCESS && eng != null) {
+        val set: Set<TtsVoice> = eng.voices ?: emptySet()
+        val list: List<TtsVoice> = set
+          .filter { v: TtsVoice ->
+            val tag = v.locale?.toLanguageTag()?.lowercase(Locale.ROOT) ?: ""
+            tag.startsWith(targetLang.lowercase(Locale.ROOT))
+          }
+          .sortedBy { it.name }
         voices = list
       }
     }
-    tts = engine
-    onDispose { engine.shutdown() }
+    onDispose { engineRef?.shutdown() }
   }
 
   Row {
@@ -41,7 +45,7 @@ fun VoicePicker(targetLang: String, savedVoice: String?, onChoose: (String?) -> 
     OutlinedButton(onClick = { onChoose(null) }) { Text("System Default") }
   }
   DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-    voices.forEach { v ->
+    voices.forEach { v: TtsVoice ->
       DropdownMenuItem(
         text = { Text(v.name) },
         onClick = { onChoose(v.name); expanded = false }
