@@ -53,6 +53,11 @@ jobs:
     needs: build
     if: >-
       ${{ github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/') }}
+    env:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_ALIAS_PASSWORD: ${{ secrets.ANDROID_KEY_ALIAS_PASSWORD }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -76,7 +81,7 @@ jobs:
           echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
 
       - name: Decode keystore and write properties
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 && secrets.ANDROID_KEYSTORE_PASSWORD && secrets.ANDROID_KEY_ALIAS && secrets.ANDROID_KEY_ALIAS_PASSWORD }}
+        if: ${{ env.ANDROID_KEYSTORE_BASE64 != '' && env.ANDROID_KEYSTORE_PASSWORD != '' && env.ANDROID_KEY_ALIAS != '' && env.ANDROID_KEY_ALIAS_PASSWORD != '' }}
         run: |
           mkdir -p keystore
           echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > keystore/release.jks
@@ -86,11 +91,6 @@ jobs:
           keyAlias=${ANDROID_KEY_ALIAS}
           keyPassword=${ANDROID_KEY_ALIAS_PASSWORD}
           EOF
-        env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_ALIAS_PASSWORD: ${{ secrets.ANDROID_KEY_ALIAS_PASSWORD }}
 
       - name: Gradle build (release, all flavors)
         run: |
@@ -103,4 +103,3 @@ jobs:
           path: |
             app/build/outputs/apk/**/release/*.apk
             wear/build/outputs/apk/**/release/*.apk
-
