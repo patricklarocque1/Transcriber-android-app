@@ -12,6 +12,7 @@ import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import android.speech.SpeechRecognizer
+import android.speech.tts.TextToSpeech
 import com.example.wristlingo.data.Redactor
 import com.example.wristlingo.data.db.AppDatabase
 import com.example.wristlingo.data.db.Session
@@ -41,7 +42,8 @@ class TranslatorService : Service() {
   private lateinit var settings: SettingsStore
   private lateinit var db: AppDatabase
   private lateinit var wear: WearBridge
-  private var tts: android.speech.tts.TextToSpeech? = null
+  private var tts: TextToSpeech? = null
+  private var lastUtteranceHash: Int? = null
   private var currentSessionId: Long? = null
   private lateinit var langId: LanguageId
 
@@ -56,7 +58,7 @@ class TranslatorService : Service() {
         "stop" -> onStartCommand(Intent(ACTION_STOP), 0, 0)
       }
     }.also { it.start() }
-    tts = android.speech.tts.TextToSpeech(this) { }
+    tts = TextToSpeech(this) { }
     langId = LanguageId(this)
   }
 
@@ -64,6 +66,7 @@ class TranslatorService : Service() {
     runningJob?.cancel()
     wear.stop()
     tts?.shutdown()
+    stopForeground(STOP_FOREGROUND_REMOVE)
     super.onDestroy()
   }
 
@@ -119,7 +122,12 @@ class TranslatorService : Service() {
         return START_NOT_STICKY
       }
     }
-    return START_STICKY
+    return START_NOT_STICKY
+  }
+
+  override fun onTaskRemoved(rootIntent: Intent?) {
+    stopSimulation()
+    super.onTaskRemoved(rootIntent)
   }
 
   private fun startWork() {
@@ -147,7 +155,11 @@ class TranslatorService : Service() {
         db.utteranceDao().insert(
           Utterance(sessionId = currentSessionId!!, ts = System.currentTimeMillis(), srcText = clean, dstText = translated, lang = targetLang)
         )
-        if (ttsEnabled) tts?.speak(translated, android.speech.tts.TextToSpeech.QUEUE_ADD, null, "utt-${System.currentTimeMillis()}")
+        val translatedHash = translated.hashCode()
+        if (isFinal && ttsEnabled && translatedHash != lastUtteranceHash) {
+          tts?.speak(translated, TextToSpeech.QUEUE_FLUSH, null, "utt-${'$'}{System.currentTimeMillis()}")
+          lastUtteranceHash = translatedHash
+        }
       }
 
       // Configure TTS voice/language/pitch/rate before work

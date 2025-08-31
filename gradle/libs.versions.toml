@@ -15,6 +15,7 @@ mlkit-translate = "17.0.2"
 ksp-plugin = "2.0.0-1.0.24"
 mlkit-langid = "17.0.5"
 okhttp = "4.12.0"
+work = "2.9.0"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidx-core" }
@@ -40,6 +41,7 @@ androidx-datastore-preferences = { module = "androidx.datastore:datastore-prefer
 mlkit-translate = { module = "com.google.mlkit:translate", version.ref = "mlkit-translate" }
 mlkit-language-id = { module = "com.google.mlkit:language-id", version.ref = "mlkit-langid" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
+androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "work" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
