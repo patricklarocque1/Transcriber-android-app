@@ -1,0 +1,1 @@
+/home/patrick/Documents/projects/Transcriber-android-app/app/build/intermediates/cxx/Debug/716c5z4l/obj/x86_64

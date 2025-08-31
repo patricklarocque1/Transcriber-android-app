@@ -1,0 +1,27 @@
+{
+  "buildFiles": [
+    "/home/patrick/Documents/projects/Transcriber-android-app/app/src/main/cpp/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/opt/android-sdk/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/home/patrick/Documents/projects/Transcriber-android-app/app/.cxx/Debug/716c5z4l/armeabi-v7a",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/opt/android-sdk/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/home/patrick/Documents/projects/Transcriber-android-app/app/.cxx/Debug/716c5z4l/armeabi-v7a",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "whisperjni::@6890427a1f51a3e7e1df": {
+      "artifactName": "whisperjni",
+      "abi": "armeabi-v7a",
+      "output": "/home/patrick/Documents/projects/Transcriber-android-app/app/build/intermediates/cxx/Debug/716c5z4l/obj/armeabi-v7a/libwhisperjni.so",
+      "runtimeFiles": []
+    }
+  }
+}

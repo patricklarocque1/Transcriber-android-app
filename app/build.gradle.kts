@@ -70,6 +70,12 @@ android {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
   }
+
+  externalNativeBuild {
+    cmake {
+      path = file("src/main/cpp/CMakeLists.txt")
+    }
+  }
 }
 
 dependencies {
@@ -105,6 +111,11 @@ dependencies {
 
   // ML Kit: on-device translation
   implementation(libs.mlkit.translate)
+  // ML Kit: language identification
+  implementation(libs.mlkit.language.id)
+
+  // OkHttp for model downloads
+  implementation(libs.okhttp)
 }
 
 kotlin {

@@ -10,9 +10,14 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -24,12 +29,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.background
 import androidx.core.content.ContextCompat
 import android.widget.Toast
 import kotlinx.coroutines.flow.collectLatest
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
+import androidx.compose.material3.Slider
 import com.example.wristlingo.settings.Keys
 import com.example.wristlingo.settings.SettingsStore
 import androidx.compose.foundation.layout.Row
@@ -40,6 +48,14 @@ import android.net.Uri
 import androidx.activity.result.contract.ActivityResultContracts.CreateDocument
 import com.example.wristlingo.data.db.AppDatabase
 import com.example.wristlingo.export.exportSessions
+import com.example.wristlingo.tts.VoicePicker
+import com.example.wristlingo.whisper.WhisperUiActions
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,12 +79,17 @@ private fun HomeScreen() {
   val targetLangPref = (prefs?.get(Keys.targetLang) ?: "es")
   val redact = (prefs?.get(Keys.redact) ?: false)
   val tts = (prefs?.get(Keys.tts) ?: false)
+  val pitchPref = (prefs?.get(Keys.ttsPitch) ?: 1.0f)
+  val ratePref = (prefs?.get(Keys.ttsRate) ?: 1.0f)
+  val autoDetect = (prefs?.get(Keys.autoLangDetect) ?: true)
+  val savedVoice = prefs?.get(Keys.ttsVoice)
   val db = remember { AppDatabase.get(context) }
 
   // Observe caption updates from the service via AppBus
   LaunchedEffect(Unit) {
     AppBus.captions.collectLatest { caption = it }
   }
+  val asrState by AppBus.asrState.collectAsState()
 
   val notifPermissionLauncher = rememberLauncherForActivityResult(
     contract = ActivityResultContracts.RequestPermission()
@@ -98,6 +119,31 @@ private fun HomeScreen() {
       textAlign = TextAlign.Center,
       style = MaterialTheme.typography.titleMedium
     )
+    // ASR state indicator
+    val color = when (asrState) {
+      "ready" -> Color(0xFFFBC02D)
+      "listening" -> Color(0xFF2E7D32)
+      "processing" -> Color(0xFF0288D1)
+      "error" -> Color(0xFFC62828)
+      else -> Color(0xFF9E9E9E)
+    }
+    val scale = if (asrState == "listening") {
+      val t = rememberInfiniteTransition(label = "asr-pulse")
+      t.animateFloat(
+        initialValue = 0.9f,
+        targetValue = 1.2f,
+        animationSpec = infiniteRepeatable(
+          animation = tween(durationMillis = 800, easing = FastOutSlowInEasing),
+          repeatMode = RepeatMode.Reverse
+        ),
+        label = "asr-pulse-scale"
+      ).value
+    } else 1f
+    Row(verticalAlignment = Alignment.CenterVertically) {
+      Box(modifier = Modifier.size(10.dp).scale(scale).clip(CircleShape).background(color))
+      Spacer(Modifier.width(8.dp))
+      Text("ASR: ${asrState.replaceFirstChar { it.uppercase() }}")
+    }
     // Provider selection
     Text("ASR Provider: $provider")
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -124,6 +170,27 @@ private fun HomeScreen() {
       Text("TTS")
       Spacer(Modifier.width(8.dp))
       Switch(checked = tts, onCheckedChange = { scope.launch { store.setTts(it) } })
+    }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+      Text("Auto Lang Detect")
+      Spacer(Modifier.width(8.dp))
+      Switch(checked = autoDetect, onCheckedChange = { scope.launch { store.setAutoLangDetect(it) } })
+    }
+    // TTS Pitch and Rate sliders
+    var pitch by remember(pitchPref) { mutableStateOf(pitchPref) }
+    Text("Pitch: ${String.format("%.2f", pitch)}")
+    Slider(value = pitch, onValueChange = { pitch = it }, valueRange = 0.5f..1.5f)
+    OutlinedButton(onClick = { scope.launch { store.setTtsPitch(pitch) } }) { Text("Save Pitch") }
+    var rate by remember(ratePref) { mutableStateOf(ratePref) }
+    Text("Rate: ${String.format("%.2f", rate)}")
+    Slider(value = rate, onValueChange = { rate = it }, valueRange = 0.5f..1.5f)
+    OutlinedButton(onClick = { scope.launch { store.setTtsRate(rate) } }) { Text("Save Rate") }
+
+    // Voice picker (by target language)
+    VoicePicker(targetLangPref, savedVoice) { chosen -> scope.launch { store.setTtsVoice(chosen) } }
+
+    if (provider == "whisper") {
+      OutlinedButton(onClick = { scope.launch { WhisperUiActions.downloadTinyModel(context) } }) { Text("Download Whisper Tiny model") }
     }
     Button(onClick = {
       if (Build.VERSION.SDK_INT >= 33) {

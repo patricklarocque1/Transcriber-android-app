@@ -1,4 +1,5 @@
 package com.example.wristlingo.providers
+import com.example.wristlingo.AppBus
 
 class FakeAsrProvider : AsrProvider {
   private var started = false
@@ -16,6 +17,7 @@ class FakeAsrProvider : AsrProvider {
     started = true
     frames = 0
     partialIdx = 0
+    AppBus.asrState.value = "ready"
   }
 
   override fun feedPcm(frame: ShortArray): AsrProvider.Partial? {
@@ -26,6 +28,8 @@ class FakeAsrProvider : AsrProvider {
       val text = steps[partialIdx]
       partialIdx++
       val isFinal = partialIdx >= steps.size
+      if (partialIdx == 1) AppBus.asrState.value = "listening"
+      if (isFinal) AppBus.asrState.value = "processing"
       val p = AsrProvider.Partial(text, isFinal)
       listener?.invoke(p)
       p
@@ -34,10 +38,12 @@ class FakeAsrProvider : AsrProvider {
 
   override fun finalizeStream(): String {
     started = false
-    return steps.last()
+    val out = steps.last()
+    AppBus.asrState.value = "idle"
+    return out
   }
 
-  override fun close() { started = false }
+  override fun close() { started = false; AppBus.asrState.value = "idle" }
 
   override fun setListener(listener: ((AsrProvider.Partial) -> Unit)?) {
     this.listener = listener

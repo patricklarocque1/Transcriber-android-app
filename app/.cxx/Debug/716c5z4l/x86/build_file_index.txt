@@ -1,0 +1,1 @@
+/home/patrick/Documents/projects/Transcriber-android-app/app/src/main/cpp/CMakeLists.txt

@@ -1,0 +1,7 @@
+[
+{
+  "directory": "/home/patrick/Documents/projects/Transcriber-android-app/app/.cxx/Debug/716c5z4l/x86",
+  "command": "/opt/android-sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ --target=i686-none-linux-android26 --sysroot=/opt/android-sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/sysroot -Dwhisperjni_EXPORTS -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fno-limit-debug-info  -fPIC -o CMakeFiles/whisperjni.dir/whisperjni.cpp.o -c /home/patrick/Documents/projects/Transcriber-android-app/app/src/main/cpp/whisperjni.cpp",
+  "file": "/home/patrick/Documents/projects/Transcriber-android-app/app/src/main/cpp/whisperjni.cpp"
+}
+]
