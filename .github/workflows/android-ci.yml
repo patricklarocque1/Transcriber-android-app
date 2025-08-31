@@ -31,12 +31,14 @@ jobs:
 
       - name: Android SDK
         uses: android-actions/setup-android@v3
-        with:
-          packages: |
-            platform-tools
-            cmdline-tools;latest
-            platforms;android-35
-            build-tools;35.0.0
+
+      - name: Install SDK components
+        run: |
+          sdkmanager --install "platform-tools" "cmdline-tools;latest" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Point local.properties at CI SDK
+        run: |
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
 
       - name: Accept licenses
         run: yes | sdkmanager --licenses
@@ -98,4 +100,3 @@ jobs:
           branch: ${{ github.ref_name }}
           title: "Codex: tests/lint fixes for PR #${{ github.event.pull_request.number }}"
           body: "Automated suggestions from Codex CLI."
-
