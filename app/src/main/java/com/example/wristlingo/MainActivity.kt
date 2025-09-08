@@ -24,6 +24,7 @@ import kotlinx.coroutines.launch
 import com.example.wristlingo.data.db.AppDatabase
 import com.example.wristlingo.export.exportSessions
 import com.example.wristlingo.settings.SettingsStore
+import com.example.wristlingo.settings.SettingsApi
 import com.example.wristlingo.tts.VoicePicker
 import com.example.wristlingo.ui.*
 import com.example.wristlingo.whisper.WhisperUiActions
@@ -44,7 +45,7 @@ class MainActivity : ComponentActivity() {
 private fun HomeScreen() {
   val context = LocalContext.current
   var caption by remember { mutableStateOf("Idle – press Start") }
-  val store = remember { SettingsStore(context) }
+  val store: SettingsApi = remember { SettingsStore(context) }
   val scope = rememberCoroutineScope()
   val prefs by store.data.collectAsState(initial = null)
   

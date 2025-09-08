@@ -9,7 +9,7 @@ class FakeProvidersTest {
     @Test
     fun fakeAsrProviderBasicFunctionality() = runTest {
         val provider = FakeAsrProvider()
-        var receivedResults = mutableListOf<AsrResult>()
+        var receivedResults = mutableListOf<AsrProvider.Partial>()
         
         provider.setListener { result ->
             receivedResults.add(result)
@@ -87,7 +87,7 @@ class FakeProvidersTest {
     @Test
     fun fakeAsrProviderGeneratesPartialAndFinalResults() = runTest {
         val provider = FakeAsrProvider()
-        val results = mutableListOf<AsrResult>()
+        val results = mutableListOf<AsrProvider.Partial>()
         
         provider.setListener { result ->
             results.add(result)

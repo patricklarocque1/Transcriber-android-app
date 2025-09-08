@@ -146,7 +146,7 @@ class TranslationPipeline(
         }
     }
     
-    private fun speakText(text: String) {
+    internal fun speakText(text: String) {
         val textHash = text.hashCode()
         if (textHash != lastUtteranceHash) {
             try {

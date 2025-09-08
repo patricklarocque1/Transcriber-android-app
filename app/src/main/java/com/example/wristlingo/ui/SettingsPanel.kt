@@ -6,7 +6,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.wristlingo.settings.SettingsStore
+import androidx.compose.ui.platform.testTag
+import com.example.wristlingo.settings.SettingsApi
 import kotlinx.coroutines.launch
 
 /**
@@ -20,7 +21,8 @@ fun SettingsPanel(
     autoDetect: Boolean,
     ttsPitch: Float,
     ttsRate: Float,
-    store: SettingsStore,
+    store: SettingsApi,
+    testTagsEnabled: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val scope = rememberCoroutineScope()
@@ -37,13 +39,14 @@ fun SettingsPanel(
             value = langInput,
             onValueChange = { langInput = it },
             label = { Text("Target lang (e.g., es)") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth().let { m -> if (testTagsEnabled) m.testTag("input_lang") else m }
         )
         
         OutlinedButton(
             onClick = { 
                 scope.launch { store.setTargetLang(langInput) }
-            }
+            },
+            modifier = if (testTagsEnabled) Modifier.testTag("btn_save_lang") else Modifier
         ) { 
             Text("Save Lang") 
         }
@@ -52,19 +55,22 @@ fun SettingsPanel(
         SettingToggle(
             label = "Redact PII",
             checked = redact,
-            onCheckedChange = { scope.launch { store.setRedact(it) } }
+            onCheckedChange = { scope.launch { store.setRedact(it) } },
+            switchTestTag = if (testTagsEnabled) "switch_redact" else null
         )
         
         SettingToggle(
             label = "TTS",
             checked = tts,
-            onCheckedChange = { scope.launch { store.setTts(it) } }
+            onCheckedChange = { scope.launch { store.setTts(it) } },
+            switchTestTag = if (testTagsEnabled) "switch_tts" else null
         )
         
         SettingToggle(
             label = "Auto Lang Detect",
             checked = autoDetect,
-            onCheckedChange = { scope.launch { store.setAutoLangDetect(it) } }
+            onCheckedChange = { scope.launch { store.setAutoLangDetect(it) } },
+            switchTestTag = if (testTagsEnabled) "switch_auto" else null
         )
         
         // TTS settings
@@ -91,7 +97,8 @@ private fun SettingToggle(
     label: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    switchTestTag: String? = null
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -101,7 +108,8 @@ private fun SettingToggle(
         Spacer(Modifier.width(8.dp))
         Switch(
             checked = checked,
-            onCheckedChange = onCheckedChange
+            onCheckedChange = onCheckedChange,
+            modifier = if (switchTestTag != null) Modifier.testTag(switchTestTag) else Modifier
         )
     }
 }

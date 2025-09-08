@@ -45,6 +45,9 @@ class TranslatorService : Service() {
   private lateinit var audioProcessor: AudioProcessor
   
   private var currentSessionId: Long? = null
+  // Test seams: set in tests to avoid real audio/translation side effects
+  internal var translationProviderFactory: (() -> com.example.wristlingo.providers.TranslationProvider)? = null
+  internal var processAudioHook: (suspend (com.example.wristlingo.providers.AsrProvider, kotlin.coroutines.CoroutineContext, suspend (String) -> Unit) -> Unit)? = null
 
   override fun onCreate() {
     super.onCreate()
@@ -117,7 +120,7 @@ class TranslatorService : Service() {
             Log.i(TAG, "Entered foreground (dataSync)")
             AppBus.captions.tryEmit("Service started [test mode]")
           } catch (t: Throwable) {
-            Log.w(TAG, "startForeground not allowed, stopping: ${'$'}t")
+            Log.w(TAG, "startForeground not allowed, stopping: $t")
             AppBus.captions.tryEmit("Unable to start service (FGS not allowed)")
             // Could not become foreground now; stop to avoid FGS timeout crash
             stopSelf(startId)
@@ -155,7 +158,7 @@ class TranslatorService : Service() {
         }
         
         // Create providers
-        val translationProvider = serviceConfig.createTranslationProvider()
+        val translationProvider = translationProviderFactory?.invoke() ?: serviceConfig.createTranslationProvider()
         val asrProvider = serviceConfig.createAsrProvider(config.providerId)
         
         // Initialize translation pipeline
@@ -233,8 +236,15 @@ class TranslatorService : Service() {
       }
     }
     
-    audioProcessor.processAudio(asr, serviceScope.coroutineContext) { finalText ->
-      translationPipeline.processText(finalText, true, currentSessionId!!, pipelineConfig)
+    val hook = processAudioHook
+    if (hook != null) {
+      hook(asr, serviceScope.coroutineContext) { finalText ->
+        translationPipeline.processText(finalText, true, currentSessionId!!, pipelineConfig)
+      }
+    } else {
+      audioProcessor.processAudio(asr, serviceScope.coroutineContext) { finalText ->
+        translationPipeline.processText(finalText, true, currentSessionId!!, pipelineConfig)
+      }
     }
   }
 

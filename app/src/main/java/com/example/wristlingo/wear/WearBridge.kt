@@ -4,21 +4,28 @@ import android.content.Context
 import com.google.android.gms.tasks.Tasks
 import com.google.android.gms.wearable.MessageClient
 import com.google.android.gms.wearable.MessageEvent
+import com.google.android.gms.wearable.NodeClient
 import com.google.android.gms.wearable.Wearable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-class WearBridge(private val context: Context, private val onControl: ((String) -> Unit)? = null) : MessageClient.OnMessageReceivedListener {
+class WearBridge(
+  private val context: Context,
+  private val onControl: ((String) -> Unit)? = null,
+  private val injectedMessageClient: MessageClient? = null,
+  private val injectedNodeClient: NodeClient? = null
+) : MessageClient.OnMessageReceivedListener {
   private val scope = CoroutineScope(Dispatchers.IO)
-  private val messageClient by lazy { Wearable.getMessageClient(context) }
+  private val messageClient: MessageClient by lazy { injectedMessageClient ?: Wearable.getMessageClient(context) }
+  private val nodeClient: NodeClient by lazy { injectedNodeClient ?: Wearable.getNodeClient(context) }
 
   fun start() { messageClient.addListener(this) }
   fun stop() { messageClient.removeListener(this) }
 
   fun broadcastCaption(text: String) {
     scope.launch {
-      val nodes = Tasks.await(Wearable.getNodeClient(context).connectedNodes)
+      val nodes = Tasks.await(nodeClient.connectedNodes)
       for (n in nodes) {
         messageClient.sendMessage(n.id, PATH_CAPTION, text.toByteArray())
       }
