@@ -1,12 +1,12 @@
+---
 name: CI
 
-on:
+'on':
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
 
-# Cancel in-progress workflows for the same PR/branch
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -16,86 +16,94 @@ permissions:
   actions: write
 
 env:
-  # Gradle configuration
   GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.jvmargs="-Xmx4g -XX:+HeapDumpOnOutOfMemoryError"
-  # Android SDK configuration  
-  ANDROID_COMPILE_SDK: "35"
-  ANDROID_BUILD_TOOLS: "35.0.0"
-  ANDROID_NDK_VERSION: "26.1.10909125"
 
 jobs:
   build:
     name: Build APKs and AABs
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    
+
     strategy:
       matrix:
         flavor: [offline, hybrid, cloudstt]
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          submodules: 'recursive'
-      
+          submodules: recursive
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-      
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          api-level: ${{ env.ANDROID_COMPILE_SDK }}
-          build-tools: ${{ env.ANDROID_BUILD_TOOLS }}
-          ndk: ${{ env.ANDROID_NDK_VERSION }}
-          cmake: '3.22.1'
 
-      - name: Accept Android SDK licenses
-        run: yes | sdkmanager --licenses || true
-      
-      - name: Set up Android environment
+      - &setup-android
+        name: Setup Android SDK
         run: |
+          set -euo pipefail
+          ANDROID_HOME=${ANDROID_HOME:-/usr/local/lib/android/sdk}
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          COMPILE_SDK=$(grep -m1 -oP 'compileSdk\s*=\s*\K\d+' app/build.gradle.kts)
+          BUILD_TOOLS="35.0.0"
+          NDK_VERSION=$(grep -m1 -oP 'ndkVersion\s*=\s*"\K[^"]+' app/build.gradle.kts wear/build.gradle.kts gradle.properties 2>/dev/null | head -1)
+          if [ -z "$NDK_VERSION" ]; then
+            NDK_VERSION=25.2.9519653
+            echo "No ndkVersion declared; using fallback $NDK_VERSION"
+          fi
+          CMAKE_VERSION=$(grep -m1 -oP 'cmake\s*{\s*version\s*=\s*"\K[^"]+' app/build.gradle.kts wear/build.gradle.kts 2>/dev/null | head -1)
+          echo "ANDROID_COMPILE_SDK=$COMPILE_SDK" >> $GITHUB_ENV
+          echo "ANDROID_BUILD_TOOLS=$BUILD_TOOLS" >> $GITHUB_ENV
+          echo "ANDROID_NDK_VERSION=$NDK_VERSION" >> $GITHUB_ENV
+          if [ -n "$CMAKE_VERSION" ]; then echo "ANDROID_CMAKE_VERSION=$CMAKE_VERSION" >> $GITHUB_ENV; fi
+          packages=(
+            "platform-tools"
+            "platforms;android-$COMPILE_SDK"
+            "build-tools;$BUILD_TOOLS"
+            "ndk;$NDK_VERSION"
+          )
+          if [ -n "$CMAKE_VERSION" ]; then packages+=("cmake;$CMAKE_VERSION"); fi
+          yes | "$SDKMANAGER" --install "${packages[@]}"
+          yes | "$SDKMANAGER" --licenses
           echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
           echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
-          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/${{ env.ANDROID_NDK_VERSION }}" >> $GITHUB_ENV
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/$NDK_VERSION" >> $GITHUB_ENV
           echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
-          echo "$ANDROID_HOME/ndk/${{ env.ANDROID_NDK_VERSION }}" >> $GITHUB_PATH
-      
-      - name: Print Android environment
-        run: |
-          chmod +x scripts/ci/print-android-env.sh
-          ./scripts/ci/print-android-env.sh
-      
+          echo "$ANDROID_HOME/ndk/$NDK_VERSION" >> $GITHUB_PATH
+
+      - &print-android-env
+        name: Print Android environment
+        run: scripts/ci/print-android-env.sh
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
           gradle-home-cache-cleanup: true
           cache-overwrite-existing: false
-      
+
       - name: Build ${{ matrix.flavor }} APKs and AABs
-        run: |
-          ./gradlew --stacktrace --no-configuration-cache \
-            :app:assemble${{ matrix.flavor }}Debug \
-            :wear:assemble${{ matrix.flavor }}Debug
-      
+        run: >
+          ./gradlew --stacktrace --no-configuration-cache
+          :app:assemble${{ matrix.flavor }}Debug
+          :wear:assemble${{ matrix.flavor }}Debug
+
       - name: Upload app APK artifacts
         uses: actions/upload-artifact@v4
         with:
           name: app-${{ matrix.flavor }}-debug-apk
           path: app/build/outputs/apk/${{ matrix.flavor }}/debug/*.apk
           retention-days: 14
-      
+
       - name: Upload wear APK artifacts
         uses: actions/upload-artifact@v4
         with:
           name: wear-${{ matrix.flavor }}-debug-apk
           path: wear/build/outputs/apk/${{ matrix.flavor }}/debug/*.apk
           retention-days: 14
-      
+
       - name: Upload build reports on failure
         if: failure()
         uses: actions/upload-artifact@v4
@@ -110,50 +118,36 @@ jobs:
     name: Unit Tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    
+
     strategy:
       matrix:
         flavor: [offline, hybrid, cloudstt]
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-      
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          api-level: ${{ env.ANDROID_COMPILE_SDK }}
-          build-tools: ${{ env.ANDROID_BUILD_TOOLS }}
-          ndk: ${{ env.ANDROID_NDK_VERSION }}
-          cmake: '3.22.1'
 
-      - name: Accept Android SDK licenses
-        run: yes | sdkmanager --licenses || true
+      - *setup-android
+      - *print-android-env
 
-      - name: Set up Android environment
-        run: |
-          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
-          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
-          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/${{ env.ANDROID_NDK_VERSION }}" >> $GITHUB_ENV
-      
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
-      
+
       - name: Run unit tests for ${{ matrix.flavor }}
-        run: |
-          ./gradlew --stacktrace \
-            :app:test${{ matrix.flavor }}DebugUnitTest \
-            :wear:test${{ matrix.flavor }}DebugUnitTest \
-            test
-      
+        run: >
+          ./gradlew --stacktrace
+          :app:test${{ matrix.flavor }}DebugUnitTest
+          :wear:test${{ matrix.flavor }}DebugUnitTest
+          test
+
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -168,45 +162,31 @@ jobs:
     name: Lint and Code Quality
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-      
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          api-level: ${{ env.ANDROID_COMPILE_SDK }}
-          build-tools: ${{ env.ANDROID_BUILD_TOOLS }}
-          ndk: ${{ env.ANDROID_NDK_VERSION }}
-          cmake: '3.22.1'
 
-      - name: Accept Android SDK licenses
-        run: yes | sdkmanager --licenses || true
+      - *setup-android
+      - *print-android-env
 
-      - name: Set up Android environment
-        run: |
-          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
-          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
-          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/${{ env.ANDROID_NDK_VERSION }}" >> $GITHUB_ENV
-      
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
-      
+
       - name: Run lint checks
-        run: |
-          ./gradlew --stacktrace \
-            :app:lintOfflineDebug \
-            :wear:lintOfflineDebug
-      
+        run: >
+          ./gradlew --stacktrace
+          :app:lintOfflineDebug
+          :wear:lintOfflineDebug
+
       - name: Upload lint reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -217,28 +197,47 @@ jobs:
             **/build/reports/lint-results*.xml
           retention-days: 14
 
+  lint-yaml:
+    name: YAML Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install yamllint
+        run: pip install yamllint
+
+      - name: Lint workflow files
+        run: yamllint .github/workflows/*.yml
+
   repo-map:
     name: Repository Map Validation
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      
+
       - name: Run repo-map tool
         run: |
           cd tools/repo-map
           python3 run.py
-      
+
       - name: Check for repository drift
         run: |
-          # Check if repo-map.json or REPO_MAP.md have changed
           if ! git diff --quiet repo-map.json REPO_MAP.md; then
             echo "❌ Repository map is out of date!"
             echo "The following files have changes:"
@@ -249,7 +248,7 @@ jobs:
           else
             echo "✅ Repository map is up to date"
           fi
-      
+
       - name: Upload repo-map artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -260,50 +259,35 @@ jobs:
             REPO_MAP.md
           retention-days: 7
 
-  # Optional instrumentation tests (requires emulator)
   instrumentation-tests:
     name: Instrumentation Tests
     runs-on: ubuntu-latest
     timeout-minutes: 60
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
+
     strategy:
       matrix:
         api-level: [26, 30]
-        flavor: [offline]  # Only test offline flavor to save CI time
-    
+        flavor: [offline]
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-      
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          api-level: ${{ matrix.api-level }}
-          build-tools: ${{ env.ANDROID_BUILD_TOOLS }}
-          ndk: ${{ env.ANDROID_NDK_VERSION }}
-          cmake: '3.22.1'
 
-      - name: Accept Android SDK licenses
-        run: yes | sdkmanager --licenses || true
+      - *setup-android
+      - *print-android-env
 
-      - name: Set up Android environment
-        run: |
-          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
-          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
-          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/${{ env.ANDROID_NDK_VERSION }}" >> $GITHUB_ENV
-      
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
           cache-read-only: true
-      
+
       - name: AVD cache
         uses: actions/cache@v4
         id: avd-cache
@@ -312,7 +296,7 @@ jobs:
             ~/.android/avd/*
             ~/.android/adb*
           key: avd-${{ matrix.api-level }}
-      
+
       - name: Create AVD and generate snapshot for caching
         if: steps.avd-cache.outputs.cache-hit != 'true'
         uses: reactivecircus/android-emulator-runner@v2
@@ -325,7 +309,7 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: false
           script: echo "Generated AVD snapshot for caching."
-      
+
       - name: Run instrumentation tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -336,11 +320,11 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: |
-            ./gradlew --stacktrace \
-              :app:connected${{ matrix.flavor }}DebugAndroidTest \
-              :wear:connected${{ matrix.flavor }}DebugAndroidTest
-      
+          script: >
+            ./gradlew --stacktrace
+            :app:connected${{ matrix.flavor }}DebugAndroidTest
+            :wear:connected${{ matrix.flavor }}DebugAndroidTest
+
       - name: Upload instrumentation test reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -351,76 +335,63 @@ jobs:
             **/build/outputs/androidTest-results/
           retention-days: 14
 
-  # Diagnostics job for debugging CI failures
   diagnostics:
     name: CI Diagnostics
     runs-on: ubuntu-latest
     if: failure()
     needs: [build, test, lint]
     timeout-minutes: 10
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-      
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          api-level: ${{ env.ANDROID_COMPILE_SDK }}
-          build-tools: ${{ env.ANDROID_BUILD_TOOLS }}
-          ndk: ${{ env.ANDROID_NDK_VERSION }}
-          cmake: '3.22.1'
 
-      - name: Accept Android SDK licenses
-        run: yes | sdkmanager --licenses || true
+      - *setup-android
 
-      - name: Set up Android environment
-        run: |
-          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
-          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
-          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/${{ env.ANDROID_NDK_VERSION }}" >> $GITHUB_ENV
-      
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
-      
+
       - name: Print comprehensive diagnostics
         run: |
           echo "=== Java Environment ==="
           java -version
           echo "JAVA_HOME: $JAVA_HOME"
-          
+
           echo "=== Gradle Environment ==="
           ./gradlew --version
-          
+
           echo "=== Android SDK Environment ==="
-          chmod +x scripts/ci/print-android-env.sh
-          ./scripts/ci/print-android-env.sh
-          
+          scripts/ci/print-android-env.sh
+
           echo "=== Gradle Projects ==="
           ./gradlew projects || true
-          
+
           echo "=== Available Gradle Tasks ==="
           ./gradlew tasks --all | head -100 || true
-          
+
           echo "=== SDK Manager List ==="
-          sdkmanager --list | head -50 || true
-          
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --list | head -50 || true
+
           echo "=== NDK Information ==="
-          if [ -d "$ANDROID_HOME/ndk/${{ env.ANDROID_NDK_VERSION }}" ]; then
-            echo "NDK installed at: $ANDROID_HOME/ndk/${{ env.ANDROID_NDK_VERSION }}"
-            ls -la "$ANDROID_HOME/ndk/${{ env.ANDROID_NDK_VERSION }}"
+          if [ -d "$ANDROID_NDK_HOME" ]; then
+            echo "NDK installed at: $ANDROID_NDK_HOME"
+            ls -la "$ANDROID_NDK_HOME"
           else
             echo "NDK not found at expected location"
           fi
-          
+
           echo "=== CMake Information ==="
-          cmake --version || echo "CMake not found"
-          
+          if command -v cmake &> /dev/null; then
+            cmake --version
+          else
+            echo "CMake not found"
+          fi
+
           echo "=== Last 200 lines of Gradle daemon logs ==="
           find ~/.gradle/daemon -name "*.log" -exec tail -200 {} \; 2>/dev/null || echo "No daemon logs found"
