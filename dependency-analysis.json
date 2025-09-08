@@ -1,0 +1,33 @@
+{
+  "dependency_graph": {
+    "wristlingo": [
+      "wear"
+    ]
+  },
+  "cycles": [],
+  "layers": {
+    "Layer 0": [
+      "Transcriber-android-app",
+      "wristlingo"
+    ],
+    "Layer 1": [
+      "wear"
+    ]
+  },
+  "fanin_fanout": {
+    "Transcriber-android-app": {
+      "fanin": 0,
+      "fanout": 0
+    },
+    "wear": {
+      "fanin": 1,
+      "fanout": 0
+    },
+    "wristlingo": {
+      "fanin": 0,
+      "fanout": 1
+    }
+  },
+  "critical_path": [],
+  "suggestions": []
+}
