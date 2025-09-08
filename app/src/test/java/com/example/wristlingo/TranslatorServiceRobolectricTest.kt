@@ -4,7 +4,6 @@ import android.content.Intent
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.wristlingo.providers.AsrProvider
-import com.example.wristlingo.providers.FakeAsrProvider
 import com.example.wristlingo.providers.TranslationProvider
 import com.example.wristlingo.service.TranslationPipeline
 import io.mockk.every

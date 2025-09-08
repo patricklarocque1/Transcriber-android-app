@@ -33,7 +33,10 @@ class ServiceConfiguration(private val context: Context) {
         val prefs = settings.data.firstOrNull()
         
         return Config(
-            providerId = prefs?.get(Keys.provider) ?: "fake",
+            providerId = when (val saved = prefs?.get(Keys.provider)) {
+                null, "", "fake" -> "system"
+                else -> saved
+            },
             targetLang = prefs?.get(Keys.targetLang) ?: "es",
             redact = prefs?.get(Keys.redact) ?: false,
             ttsEnabled = prefs?.get(Keys.tts) ?: false,
@@ -47,13 +50,7 @@ class ServiceConfiguration(private val context: Context) {
     /**
      * Create translation provider based on configuration
      */
-    fun createTranslationProvider(): TranslationProvider {
-        return try {
-            MlKitTranslationProvider(context)
-        } catch (e: Exception) {
-            FakeTranslationProvider()
-        }
-    }
+    fun createTranslationProvider(): TranslationProvider = MlKitTranslationProvider(context)
     
     /**
      * Create ASR provider based on configuration
@@ -64,17 +61,17 @@ class ServiceConfiguration(private val context: Context) {
                 if (WhisperModelManager.isPresent(context)) {
                     WhisperCppProvider(context)
                 } else {
-                    FakeAsrProvider() // Fallback if model not available
+                    // Fall back to system if available, else throw
+                    if (android.speech.SpeechRecognizer.isRecognitionAvailable(context)) {
+                        SystemSpeechRecognizerProvider(context)
+                    } else throw IllegalStateException("No ASR available: Whisper model missing and System unavailable")
                 }
             }
-            "system" -> {
+            else -> {
                 if (android.speech.SpeechRecognizer.isRecognitionAvailable(context)) {
                     SystemSpeechRecognizerProvider(context)
-                } else {
-                    FakeAsrProvider() // Fallback if system ASR not available
-                }
+                } else throw IllegalStateException("System speech recognizer not available")
             }
-            else -> FakeAsrProvider()
         }
     }
     

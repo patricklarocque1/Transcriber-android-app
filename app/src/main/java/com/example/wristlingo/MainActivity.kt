@@ -50,7 +50,10 @@ private fun HomeScreen() {
   val prefs by store.data.collectAsState(initial = null)
   
   // Extract preferences with defaults
-  val provider = prefs?.get(com.example.wristlingo.settings.Keys.provider) ?: "fake"
+  val provider = when (val p = prefs?.get(com.example.wristlingo.settings.Keys.provider)) {
+    null, "", "fake" -> "system"
+    else -> p
+  }
   val targetLangPref = prefs?.get(com.example.wristlingo.settings.Keys.targetLang) ?: "es"
   val redact = prefs?.get(com.example.wristlingo.settings.Keys.redact) ?: false
   val tts = prefs?.get(com.example.wristlingo.settings.Keys.tts) ?: false

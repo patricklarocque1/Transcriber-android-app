@@ -15,7 +15,7 @@ import com.example.wristlingo.settings.SettingsStore
 import kotlinx.coroutines.launch
 
 /**
- * UI component for selecting ASR provider (Fake, System, Whisper)
+ * UI component for selecting ASR provider (System, Whisper)
  */
 @Composable
 fun ProviderSelector(
@@ -33,14 +33,6 @@ fun ProviderSelector(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            OutlinedButton(
-                onClick = { 
-                    scope.launch { store.setProvider("fake") }
-                }
-            ) { 
-                Text("Fake") 
-            }
-            
             OutlinedButton(
                 onClick = { 
                     scope.launch { store.setProvider("system") }
