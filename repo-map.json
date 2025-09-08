@@ -35,30 +35,30 @@
           "MainActivity"
         ],
         "functions": [
-          "onCreate",
-          "send",
           "WearScreen",
-          "onMessageReceived",
-          "onDestroy"
+          "send",
+          "onCreate",
+          "onDestroy",
+          "onMessageReceived"
         ],
         "types": [],
         "endpoints": []
       },
       "deps_internal": [],
       "deps_external": [
-        "androidx.test:core:1.5.0",
         "compose.ui",
-        "wear.compose.material",
-        "compose.ui.tooling.preview",
-        "junit:junit:4.13.2",
-        "org.mockito:mockito-core:5.8.0",
-        "org.robolectric:robolectric:4.11.1",
-        "androidx.compose.ui:ui-test-junit4:1.5.8",
-        "platform(libs.compose.bom",
-        "wear.compose.foundation",
         "play.services.wearable",
-        "org.mockito:mockito-kotlin:5.2.1",
-        "androidx.activity.compose"
+        "org.robolectric:robolectric:4.11.1",
+        "org.mockito:mockito-core:5.8.0",
+        "androidx.compose.ui:ui-test-junit4:1.5.8",
+        "junit:junit:4.13.2",
+        "wear.compose.material",
+        "platform(libs.compose.bom",
+        "androidx.activity.compose",
+        "compose.ui.tooling.preview",
+        "wear.compose.foundation",
+        "androidx.test:core:1.5.0",
+        "org.mockito:mockito-kotlin:5.2.1"
       ],
       "entrypoints": [
         "MainActivity"
@@ -80,24 +80,24 @@
       "public_api": {
         "classes": [
           "App",
-          "AppBus",
-          "WearBridge",
-          "MainActivity",
           "SimpleVad",
+          "State",
+          "WearBridge",
           "TranslatorService",
-          "State"
+          "MainActivity",
+          "AppBus"
         ],
         "functions": [
-          "SettingsPanel",
-          "ExportButton",
-          "PreviewHome",
-          "ProviderSelector",
-          "start",
-          "startService",
+          "StatusHeader",
+          "handleStartService",
+          "onStop",
+          "AsrStateIndicator",
           "onMessageReceived",
-          "showWhisperMessage",
-          "startWork",
-          "handleStartService"
+          "ProviderSelector",
+          "PreviewHome",
+          "broadcastCaption",
+          "stop",
+          "onTaskRemoved"
         ],
         "types": [],
         "endpoints": []
@@ -106,21 +106,21 @@
         "wear"
       ],
       "deps_external": [
-        "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1",
-        "google.material",
-        "androidx.room.runtime",
-        "androidx.work.runtime.ktx",
-        "play.services.wearable",
-        "mlkit.translate",
-        "androidx.activity.compose",
-        "androidx.lifecycle.runtime.ktx",
-        "compose.ui",
-        "compose.material3",
-        "platform(libs.compose.bom",
         "androidx.room.ktx",
         "androidx.room:room-testing:2.6.1",
+        "androidx.lifecycle.runtime.ktx",
         "androidx.test:core:1.5.0",
-        "kotlinx.coroutines.android"
+        "org.mockito:mockito-kotlin:5.2.1",
+        "androidx.arch.core:core-testing:2.2.0",
+        "androidx.core.ktx",
+        "compose.ui",
+        "play.services.wearable",
+        "org.mockito:mockito-core:5.8.0",
+        "kotlinx.coroutines.android",
+        "mlkit.language.id",
+        "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1",
+        "androidx.work.runtime.ktx",
+        "mlkit.translate"
       ],
       "entrypoints": [
         "MainActivity"

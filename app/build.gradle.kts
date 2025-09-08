@@ -20,6 +20,7 @@ val hasKeystore = keystorePropertiesFile.exists()
 android {
   namespace = "com.example.wristlingo"
   compileSdk = 35
+  ndkVersion = "26.1.10909125"
 
   defaultConfig {
     applicationId = "com.example.wristlingo"
@@ -74,6 +75,7 @@ android {
   externalNativeBuild {
     cmake {
       path = file("src/main/cpp/CMakeLists.txt")
+      version = "3.22.1"
     }
   }
 }
