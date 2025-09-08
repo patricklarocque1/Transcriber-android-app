@@ -1,0 +1,85 @@
+{
+  "generated_at": "2025-09-08T12:15:06.918198",
+  "repository": {
+    "name": "WristLingo (Android + Wear OS)",
+    "description": "Offline-first Android + Wear OS translation app",
+    "type": "Android Multi-Module Project",
+    "languages": [
+      "kotlin+cpp",
+      "kotlin",
+      "gradle"
+    ],
+    "total_modules": 3
+  },
+  "modules": {
+    "Transcriber-android-app": {
+      "type": "package",
+      "language": "gradle",
+      "path": ".",
+      "key_components": 0,
+      "external_deps": 0,
+      "test_coverage": false
+    },
+    "wear": {
+      "type": "library",
+      "language": "kotlin",
+      "path": "wear",
+      "key_components": 1,
+      "external_deps": 7,
+      "test_coverage": false
+    },
+    "wristlingo": {
+      "type": "library",
+      "language": "kotlin+cpp",
+      "path": "app",
+      "key_components": 10,
+      "external_deps": 15,
+      "test_coverage": true
+    }
+  },
+  "architecture": {
+    "patterns": [
+      "Provider Pattern (ASR & Translation)",
+      "Repository Pattern (Data Access)",
+      "Foreground Service (Background Processing)",
+      "Data Layer Messaging (Watch-Phone Communication)"
+    ],
+    "key_technologies": [
+      "Kotlin",
+      "Jetpack Compose",
+      "Room Database",
+      "ML Kit",
+      "Whisper.cpp (JNI)",
+      "Android Data Layer"
+    ],
+    "deployment_flavors": [
+      "offline",
+      "hybrid",
+      "cloudstt"
+    ]
+  },
+  "quality_metrics": {
+    "dependency_cycles": 0,
+    "complexity_hotspots": 4,
+    "test_modules": 1,
+    "documentation_files": [
+      "README.md",
+      "README.wristlingo.md",
+      "docs/",
+      "codex/"
+    ]
+  },
+  "build_system": {
+    "type": "Gradle (Kotlin DSL)",
+    "java_version": "17+",
+    "android_sdk": "35",
+    "min_sdk_phone": "26",
+    "min_sdk_wear": "30",
+    "ci_cd": "GitHub Actions"
+  },
+  "dependency_analysis": {
+    "architectural_layers": 2,
+    "critical_paths": 0,
+    "improvement_suggestions": 0
+  }
+}

@@ -1,0 +1,164 @@
+{
+  "modules": [
+    {
+      "name": "Transcriber-android-app",
+      "path": ".",
+      "language": "gradle",
+      "kind": "package",
+      "public_api": {
+        "modules": [
+          ":app"
+        ]
+      },
+      "deps_internal": [],
+      "deps_external": [],
+      "entrypoints": [
+        "gradlew"
+      ],
+      "tests": {
+        "count": 0,
+        "paths": []
+      },
+      "schemas": [],
+      "notes": "Gradle multi-module project with 1 modules"
+    },
+    {
+      "name": "wear",
+      "path": "wear",
+      "language": "kotlin",
+      "kind": "library",
+      "public_api": {
+        "classes": [
+          "MainActivity"
+        ],
+        "functions": [
+          "onDestroy",
+          "WearScreen",
+          "send",
+          "onCreate",
+          "onMessageReceived"
+        ],
+        "types": [],
+        "endpoints": []
+      },
+      "deps_internal": [],
+      "deps_external": [
+        "compose.ui",
+        "androidx.activity.compose",
+        "play.services.wearable",
+        "wear.compose.foundation",
+        "compose.ui.tooling.preview",
+        "platform(libs.compose.bom",
+        "wear.compose.material"
+      ],
+      "entrypoints": [
+        "MainActivity"
+      ],
+      "tests": {
+        "count": 0,
+        "paths": []
+      },
+      "schemas": [],
+      "notes": "uses Jetpack Compose UI"
+    },
+    {
+      "name": "wristlingo",
+      "path": "app",
+      "language": "kotlin+cpp",
+      "kind": "library",
+      "public_api": {
+        "classes": [
+          "ExportActivity",
+          "SimpleVad",
+          "WearBridge",
+          "State",
+          "MainActivity",
+          "AppBus",
+          "TranslatorService",
+          "App",
+          "WhisperModelManager",
+          "WhisperUiActions"
+        ],
+        "functions": [
+          "analyze",
+          "esc",
+          "PreviewHome",
+          "startWork",
+          "HomeScreen",
+          "VoicePicker",
+          "onMessageReceived",
+          "modelDir",
+          "buildNotification",
+          "broadcastCaption"
+        ],
+        "types": [],
+        "endpoints": []
+      },
+      "deps_internal": [
+        "wear"
+      ],
+      "deps_external": [
+        "androidx.lifecycle.runtime.ktx",
+        "androidx.core.ktx",
+        "androidx.activity.compose",
+        "google.material",
+        "compose.ui",
+        "play.services.wearable",
+        "androidx.room.ktx",
+        "androidx.datastore.preferences",
+        "androidx.room.runtime",
+        "mlkit.language.id",
+        "compose.ui.tooling.preview",
+        "platform(libs.compose.bom",
+        "kotlinx.coroutines.android",
+        "androidx.work.runtime.ktx",
+        "mlkit.translate"
+      ],
+      "entrypoints": [
+        "MainActivity"
+      ],
+      "tests": {
+        "count": 1,
+        "paths": [
+          "app/src/test/java/com/example/wristlingo/RedactorTest.kt"
+        ]
+      },
+      "schemas": [],
+      "notes": "contains background services; implements provider pattern; includes database layer; uses Jetpack Compose UI; integrates Whisper ASR; includes native C++ code"
+    }
+  ],
+  "graphs": {
+    "modules_mermaid": "graph TD\n  Transcriber_android_app[\"Transcriber-android-app\"]\n  wear[\"wear\"]\n  wristlingo[\"wristlingo\"]\n  wristlingo --> wear",
+    "cycles": []
+  },
+  "hotspots": [
+    {
+      "path": "app/src/main/java/com/example/wristlingo/TranslatorService.kt",
+      "loc": 254,
+      "reasons": [
+        "large file"
+      ]
+    },
+    {
+      "path": "app/src/main/java/com/example/wristlingo/TranslatorService.kt",
+      "loc": 254,
+      "reasons": [
+        "large file"
+      ]
+    },
+    {
+      "path": "app/src/main/java/com/example/wristlingo/MainActivity.kt",
+      "loc": 249,
+      "reasons": [
+        "large file"
+      ]
+    },
+    {
+      "path": "app/src/main/java/com/example/wristlingo/MainActivity.kt",
+      "loc": 249,
+      "reasons": [
+        "large file"
+      ]
+    }
+  ]
+}
