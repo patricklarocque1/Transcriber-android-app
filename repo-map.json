@@ -1,26 +1,29 @@
 {
   "modules": [
     {
-      "name": "Transcriber-android-app",
+      "name": "root",
       "path": ".",
-      "language": "gradle",
-      "kind": "package",
+      "language": "kotlin",
+      "kind": "library",
       "public_api": {
-        "modules": [
-          ":app"
-        ]
+        "classes": [],
+        "functions": [],
+        "types": [],
+        "endpoints": []
       },
       "deps_internal": [],
-      "deps_external": [],
-      "entrypoints": [
-        "gradlew"
+      "deps_external": [
+        "junit:junit:4.13.2"
       ],
+      "entrypoints": [],
       "tests": {
-        "count": 0,
-        "paths": []
+        "count": 1,
+        "paths": [
+          "src/test/java/com/example/wristlingo/gradle/VersionCatalogTest.kt"
+        ]
       },
       "schemas": [],
-      "notes": "Gradle multi-module project with 1 modules"
+      "notes": "Standard module"
     },
     {
       "name": "wear",
@@ -32,31 +35,39 @@
           "MainActivity"
         ],
         "functions": [
-          "onDestroy",
-          "WearScreen",
-          "send",
           "onCreate",
-          "onMessageReceived"
+          "send",
+          "WearScreen",
+          "onMessageReceived",
+          "onDestroy"
         ],
         "types": [],
         "endpoints": []
       },
       "deps_internal": [],
       "deps_external": [
+        "androidx.test:core:1.5.0",
         "compose.ui",
-        "androidx.activity.compose",
-        "play.services.wearable",
-        "wear.compose.foundation",
+        "wear.compose.material",
         "compose.ui.tooling.preview",
+        "junit:junit:4.13.2",
+        "org.mockito:mockito-core:5.8.0",
+        "org.robolectric:robolectric:4.11.1",
+        "androidx.compose.ui:ui-test-junit4:1.5.8",
         "platform(libs.compose.bom",
-        "wear.compose.material"
+        "wear.compose.foundation",
+        "play.services.wearable",
+        "org.mockito:mockito-kotlin:5.2.1",
+        "androidx.activity.compose"
       ],
       "entrypoints": [
         "MainActivity"
       ],
       "tests": {
-        "count": 0,
-        "paths": []
+        "count": 1,
+        "paths": [
+          "wear/src/test/java/com/example/wristlingo/wear/MainActivityTest.kt"
+        ]
       },
       "schemas": [],
       "notes": "uses Jetpack Compose UI"
@@ -68,28 +79,25 @@
       "kind": "library",
       "public_api": {
         "classes": [
-          "ExportActivity",
-          "SimpleVad",
-          "WearBridge",
-          "State",
-          "MainActivity",
-          "AppBus",
-          "TranslatorService",
           "App",
-          "WhisperModelManager",
-          "WhisperUiActions"
+          "AppBus",
+          "WearBridge",
+          "MainActivity",
+          "SimpleVad",
+          "TranslatorService",
+          "State"
         ],
         "functions": [
-          "analyze",
-          "esc",
+          "SettingsPanel",
+          "ExportButton",
           "PreviewHome",
-          "startWork",
-          "HomeScreen",
-          "VoicePicker",
+          "ProviderSelector",
+          "start",
+          "startService",
           "onMessageReceived",
-          "modelDir",
-          "buildNotification",
-          "broadcastCaption"
+          "showWhisperMessage",
+          "startWork",
+          "handleStartService"
         ],
         "types": [],
         "endpoints": []
@@ -98,29 +106,33 @@
         "wear"
       ],
       "deps_external": [
-        "androidx.lifecycle.runtime.ktx",
-        "androidx.core.ktx",
-        "androidx.activity.compose",
+        "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1",
         "google.material",
-        "compose.ui",
-        "play.services.wearable",
-        "androidx.room.ktx",
-        "androidx.datastore.preferences",
         "androidx.room.runtime",
-        "mlkit.language.id",
-        "compose.ui.tooling.preview",
-        "platform(libs.compose.bom",
-        "kotlinx.coroutines.android",
         "androidx.work.runtime.ktx",
-        "mlkit.translate"
+        "play.services.wearable",
+        "mlkit.translate",
+        "androidx.activity.compose",
+        "androidx.lifecycle.runtime.ktx",
+        "compose.ui",
+        "compose.material3",
+        "platform(libs.compose.bom",
+        "androidx.room.ktx",
+        "androidx.room:room-testing:2.6.1",
+        "androidx.test:core:1.5.0",
+        "kotlinx.coroutines.android"
       ],
       "entrypoints": [
         "MainActivity"
       ],
       "tests": {
-        "count": 1,
+        "count": 5,
         "paths": [
-          "app/src/test/java/com/example/wristlingo/RedactorTest.kt"
+          "app/src/test/java/com/example/wristlingo/RedactorTest.kt",
+          "app/src/test/java/com/example/wristlingo/providers/WhisperCppProviderTest.kt",
+          "app/src/test/java/com/example/wristlingo/providers/FakeProvidersTest.kt",
+          "app/src/test/java/com/example/wristlingo/data/db/UtteranceDaoTest.kt",
+          "app/src/test/java/com/example/wristlingo/data/db/SessionDaoTest.kt"
         ]
       },
       "schemas": [],
@@ -128,26 +140,47 @@
     }
   ],
   "graphs": {
-    "modules_mermaid": "graph TD\n  Transcriber_android_app[\"Transcriber-android-app\"]\n  wear[\"wear\"]\n  wristlingo[\"wristlingo\"]\n  wristlingo --> wear",
+    "modules_mermaid": "graph TD\n  root[\"root\"]\n  wear[\"wear\"]\n  wristlingo[\"wristlingo\"]\n  wristlingo --> wear",
     "cycles": []
   },
   "hotspots": [
     {
-      "path": "app/src/main/java/com/example/wristlingo/TranslatorService.kt",
-      "loc": 254,
+      "path": "app/src/androidTest/java/com/example/wristlingo/integration/EndToEndDataFlowTest.kt",
+      "loc": 314,
+      "reasons": [
+        "large file"
+      ]
+    },
+    {
+      "path": "app/src/androidTest/java/com/example/wristlingo/integration/EndToEndDataFlowTest.kt",
+      "loc": 314,
       "reasons": [
         "large file"
       ]
     },
     {
       "path": "app/src/main/java/com/example/wristlingo/TranslatorService.kt",
-      "loc": 254,
+      "loc": 258,
       "reasons": [
         "large file"
       ]
     },
     {
-      "path": "app/src/main/java/com/example/wristlingo/MainActivity.kt",
+      "path": "app/src/main/java/com/example/wristlingo/TranslatorService.kt",
+      "loc": 258,
+      "reasons": [
+        "large file"
+      ]
+    },
+    {
+      "path": "app/src/androidTest/java/com/example/wristlingo/integration/PhoneWearIntegrationTest.kt",
+      "loc": 249,
+      "reasons": [
+        "large file"
+      ]
+    },
+    {
+      "path": "app/src/androidTest/java/com/example/wristlingo/integration/PhoneWearIntegrationTest.kt",
       "loc": 249,
       "reasons": [
         "large file"
@@ -155,7 +188,14 @@
     },
     {
       "path": "app/src/main/java/com/example/wristlingo/MainActivity.kt",
-      "loc": 249,
+      "loc": 210,
+      "reasons": [
+        "large file"
+      ]
+    },
+    {
+      "path": "app/src/main/java/com/example/wristlingo/MainActivity.kt",
+      "loc": 210,
       "reasons": [
         "large file"
       ]

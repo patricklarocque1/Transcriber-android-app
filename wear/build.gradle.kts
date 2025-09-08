@@ -79,6 +79,18 @@ dependencies {
 
   // Wearable Data Layer
   implementation(libs.play.services.wearable)
+
+  // Testing dependencies
+  testImplementation("junit:junit:4.13.2")
+  testImplementation("org.mockito:mockito-core:5.8.0")
+  testImplementation("org.mockito:mockito-kotlin:5.2.1")
+  testImplementation("org.robolectric:robolectric:4.11.1")
+  testImplementation("androidx.test:core:1.5.0")
+  testImplementation("androidx.compose.ui:ui-test-junit4:1.5.8")
+  androidTestImplementation("androidx.test.ext:junit:1.1.5")
+  androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+  androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.5.8")
+  debugImplementation("androidx.compose.ui:ui-test-manifest:1.5.8")
 }
 
 kotlin {
