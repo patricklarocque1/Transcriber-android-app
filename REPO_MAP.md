@@ -167,6 +167,7 @@ Files requiring attention due to size or complexity:
 - Kotlin wrapper with lifecycle management and error handling
 - Offline speech recognition support for the `offline` build flavor
 - Native library loading with graceful fallback
+- Fixed memory leak in JNI shared_ptr lifecycle management
 
 **Code Refactoring:**
 - Extracted service components for better modularity:

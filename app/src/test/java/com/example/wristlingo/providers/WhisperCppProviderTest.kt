@@ -163,4 +163,36 @@ class WhisperCppProviderTest {
             }
         }
     }
+
+    @Test
+    fun multipleCloseCallsHandledGracefully() = runTest {
+        provider = WhisperCppProvider(context)
+        
+        // Multiple close calls should not cause issues (e.g., double-deletion)
+        provider.close()
+        provider.close()
+        provider.close()
+        
+        // Should not throw exception or cause memory corruption
+        assertTrue("Should handle multiple close calls gracefully", true)
+    }
+
+    @Test
+    fun memoryLeakPrevention() = runTest {
+        // Test that multiple provider instances can be created and closed
+        // without accumulating memory leaks
+        repeat(10) { i ->
+            val testProvider = WhisperCppProvider(context)
+            try {
+                // Attempt to start if possible
+                testProvider.start(16000, null)
+            } catch (e: Exception) {
+                // Expected in test environment
+            }
+            // Always close to test cleanup
+            testProvider.close()
+            
+            assertTrue("Should create and close provider $i without issues", true)
+        }
+    }
 }

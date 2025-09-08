@@ -145,10 +145,11 @@ src/test/java/com/example/wristlingo/gradle/
 ## Technical Highlights
 
 ### Whisper.cpp Integration
-- **Memory Management**: Smart pointers and RAII patterns in C++
+- **Memory Management**: Smart pointers and RAII patterns in C++ with proper JNI lifecycle management
 - **Thread Safety**: Mutex protection for concurrent access
 - **Error Propagation**: Comprehensive error handling from C++ to Kotlin
 - **Audio Processing**: Efficient buffer management and format conversion
+- **Memory Leak Prevention**: Fixed heap-allocated shared_ptr cleanup in nativeClose
 
 ### Service Architecture
 - **Component Isolation**: Each service component has single responsibility

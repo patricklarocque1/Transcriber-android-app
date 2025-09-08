@@ -7,9 +7,31 @@
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, "whisperjni", __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, "whisperjni", __VA_ARGS__)
 
-// Convert jlong handle to WhisperContext pointer
+/*
+ * Memory Management Strategy:
+ * 
+ * - nativeInit: Creates a shared_ptr<WhisperContext> on the heap and returns its address as jlong handle
+ * - Other functions: Use the handle to access the shared_ptr and the contained WhisperContext
+ * - nativeClose: Deletes the heap-allocated shared_ptr, which automatically cleans up the WhisperContext
+ * 
+ * This approach ensures:
+ * 1. No memory leaks - the shared_ptr wrapper is properly deleted
+ * 2. Safe access - null checks prevent crashes from invalid handles
+ * 3. RAII - WhisperContext destructor is called when shared_ptr is deleted
+ */
+
+// Convert jlong handle to shared_ptr<WhisperContext> pointer
+static std::shared_ptr<WhisperContext>* getContextPtr(jlong handle) {
+    if (handle == 0) {
+        return nullptr;
+    }
+    return reinterpret_cast<std::shared_ptr<WhisperContext>*>(handle);
+}
+
+// Convert jlong handle to WhisperContext raw pointer for convenience
 static WhisperContext* getContext(jlong handle) {
-    return reinterpret_cast<WhisperContext*>(handle);
+    auto* contextPtr = getContextPtr(handle);
+    return (contextPtr && *contextPtr) ? contextPtr->get() : nullptr;
 }
 
 extern "C" JNIEXPORT jlong JNICALL
@@ -29,10 +51,10 @@ Java_com_example_wristlingo_providers_WhisperCppNative_nativeInit(JNIEnv* env, j
         return 0;
     }
     
-    // Return raw pointer as handle (context is managed by shared_ptr)
-    // We need to keep the shared_ptr alive, so we create a new one on the heap
+    // Store the shared_ptr on the heap and return its address as handle
+    // This allows us to properly manage the shared_ptr lifecycle
     auto* contextPtr = new std::shared_ptr<WhisperContext>(context);
-    return reinterpret_cast<jlong>(contextPtr->get());
+    return reinterpret_cast<jlong>(contextPtr);
 }
 
 extern "C" JNIEXPORT void JNICALL
@@ -72,12 +94,21 @@ Java_com_example_wristlingo_providers_WhisperCppNative_nativeFinalize(JNIEnv* en
 extern "C" JNIEXPORT void JNICALL
 Java_com_example_wristlingo_providers_WhisperCppNative_nativeClose(JNIEnv* env, jobject thiz, jlong handle) {
     if (handle != 0) {
-        WhisperContext* context = getContext(handle);
         LOGI("Closing WhisperContext");
-        // The context is managed by shared_ptr, so it will be cleaned up automatically
-        // We just need to reset any internal state
-        if (context) {
-            context->reset();
+        
+        // Get the shared_ptr from the handle and delete it to prevent memory leak
+        auto* contextPtr = getContextPtr(handle);
+        if (contextPtr) {
+            // Reset any internal state before destruction
+            if (*contextPtr) {
+                (*contextPtr)->reset();
+            }
+            // Delete the heap-allocated shared_ptr to fix the memory leak
+            // This is the key fix - we must delete the shared_ptr wrapper
+            delete contextPtr;
+            LOGI("WhisperContext shared_ptr deleted successfully");
+        } else {
+            LOGI("WhisperContext handle was already null or invalid");
         }
     }
 }
