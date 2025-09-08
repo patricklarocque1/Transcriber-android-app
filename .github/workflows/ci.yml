@@ -51,17 +51,10 @@ jobs:
           api-level: ${{ env.ANDROID_COMPILE_SDK }}
           build-tools: ${{ env.ANDROID_BUILD_TOOLS }}
           ndk: ${{ env.ANDROID_NDK_VERSION }}
-      
+          cmake: '3.22.1'
+
       - name: Accept Android SDK licenses
         run: yes | sdkmanager --licenses || true
-      
-      - name: Install additional SDK components
-        run: |
-          sdkmanager "platforms;android-${{ env.ANDROID_COMPILE_SDK }}"
-          sdkmanager "build-tools;${{ env.ANDROID_BUILD_TOOLS }}"
-          sdkmanager "ndk;${{ env.ANDROID_NDK_VERSION }}"
-          sdkmanager "cmake;3.22.1"
-          sdkmanager "platform-tools"
       
       - name: Set up Android environment
         run: |
@@ -138,15 +131,11 @@ jobs:
           api-level: ${{ env.ANDROID_COMPILE_SDK }}
           build-tools: ${{ env.ANDROID_BUILD_TOOLS }}
           ndk: ${{ env.ANDROID_NDK_VERSION }}
-      
+          cmake: '3.22.1'
+
       - name: Accept Android SDK licenses
         run: yes | sdkmanager --licenses || true
-      
-      - name: Install additional SDK components
-        run: |
-          sdkmanager "ndk;${{ env.ANDROID_NDK_VERSION }}"
-          sdkmanager "cmake;3.22.1"
-      
+
       - name: Set up Android environment
         run: |
           echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
@@ -196,15 +185,11 @@ jobs:
           api-level: ${{ env.ANDROID_COMPILE_SDK }}
           build-tools: ${{ env.ANDROID_BUILD_TOOLS }}
           ndk: ${{ env.ANDROID_NDK_VERSION }}
-      
+          cmake: '3.22.1'
+
       - name: Accept Android SDK licenses
         run: yes | sdkmanager --licenses || true
-      
-      - name: Install additional SDK components
-        run: |
-          sdkmanager "ndk;${{ env.ANDROID_NDK_VERSION }}"
-          sdkmanager "cmake;3.22.1"
-      
+
       - name: Set up Android environment
         run: |
           echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
@@ -303,15 +288,11 @@ jobs:
           api-level: ${{ matrix.api-level }}
           build-tools: ${{ env.ANDROID_BUILD_TOOLS }}
           ndk: ${{ env.ANDROID_NDK_VERSION }}
-      
+          cmake: '3.22.1'
+
       - name: Accept Android SDK licenses
         run: yes | sdkmanager --licenses || true
-      
-      - name: Install additional SDK components
-        run: |
-          sdkmanager "ndk;${{ env.ANDROID_NDK_VERSION }}"
-          sdkmanager "cmake;3.22.1"
-      
+
       - name: Set up Android environment
         run: |
           echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
@@ -394,15 +375,11 @@ jobs:
           api-level: ${{ env.ANDROID_COMPILE_SDK }}
           build-tools: ${{ env.ANDROID_BUILD_TOOLS }}
           ndk: ${{ env.ANDROID_NDK_VERSION }}
-      
+          cmake: '3.22.1'
+
       - name: Accept Android SDK licenses
         run: yes | sdkmanager --licenses || true
-      
-      - name: Install additional SDK components
-        run: |
-          sdkmanager "ndk;${{ env.ANDROID_NDK_VERSION }}"
-          sdkmanager "cmake;3.22.1"
-      
+
       - name: Set up Android environment
         run: |
           echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
