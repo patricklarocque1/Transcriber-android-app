@@ -9,9 +9,57 @@ on:
   workflow_dispatch:
 
 jobs:
+  validate-repo:
+    name: Validate Repository Structure
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Run repo-map analysis
+        run: |
+          cd tools/repo-map
+          python run.py
+
+      - name: Check for dependency cycles
+        run: |
+          python3 -c "
+          import json, sys
+          with open('repo-map.json', 'r') as f:
+              data = json.load(f)
+          cycles = data.get('graphs', {}).get('cycles', [])
+          if cycles:
+              print(f'ERROR: Found {len(cycles)} dependency cycles')
+              for cycle in cycles:
+                  print(f'  - {cycle}')
+              sys.exit(1)
+          else:
+              print('✓ No dependency cycles found')
+          "
+
+      - name: Validate repo-map schema
+        run: |
+          cd tools/repo-map
+          python -m pytest tests/test_schema.py -v
+
+      - name: Upload repo analysis
+        uses: actions/upload-artifact@v4
+        with:
+          name: repo-analysis
+          path: |
+            repo-map.json
+            REPO_MAP.md
+            *.mmd
+
   build:
     name: Build (Debug)
     runs-on: ubuntu-latest
+    needs: validate-repo
 
     steps:
       - name: Checkout
@@ -35,9 +83,32 @@ jobs:
         run: |
           echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
 
+      - name: Install NDK for native builds
+        run: |
+          sdkmanager --install "ndk;25.2.9519653"
+
+      - name: Run unit tests
+        run: |
+          ./gradlew --stacktrace --no-daemon test
+
+      - name: Run instrumentation tests (if emulator available)
+        continue-on-error: true
+        run: |
+          # Skip instrumentation tests in CI for now due to emulator complexity
+          echo "Instrumentation tests skipped in CI"
+
       - name: Gradle build (debug, all flavors)
         run: |
           ./gradlew --stacktrace --no-daemon :app:assembleDebug :wear:assembleDebug
+
+      - name: Archive test reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-reports
+          path: |
+            **/build/reports/tests/
+            **/build/test-results/
 
       - name: Upload APKs (debug)
         uses: actions/upload-artifact@v4

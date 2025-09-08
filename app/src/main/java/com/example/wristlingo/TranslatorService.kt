@@ -5,33 +5,26 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
-import android.media.AudioFormat
-import android.media.AudioRecord
-import android.media.MediaRecorder
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import android.speech.SpeechRecognizer
-import android.speech.tts.TextToSpeech
-import com.example.wristlingo.data.Redactor
 import com.example.wristlingo.data.db.AppDatabase
 import com.example.wristlingo.data.db.Session
-import com.example.wristlingo.data.db.Utterance
 import com.example.wristlingo.providers.*
-import com.example.wristlingo.settings.Keys
+import com.example.wristlingo.service.AudioProcessor
+import com.example.wristlingo.service.ServiceConfiguration
+import com.example.wristlingo.service.TranslationPipeline
 import com.example.wristlingo.settings.SettingsStore
 import com.example.wristlingo.wear.WearBridge
 import com.example.wristlingo.lang.LanguageId
-import com.example.wristlingo.audio.SimpleVad
+import com.example.wristlingo.whisper.WhisperModelManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.firstOrNull
-import com.example.wristlingo.whisper.WhisperModelManager
 
 class TranslatorService : Service() {
   override fun onBind(intent: Intent?): IBinder? = null
@@ -39,17 +32,25 @@ class TranslatorService : Service() {
   private val serviceScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
   private var runningJob: Job? = null
   private var isForeground = false
+  
+  // Core components
   private lateinit var settings: SettingsStore
   private lateinit var db: AppDatabase
   private lateinit var wear: WearBridge
-  private var tts: TextToSpeech? = null
-  private var lastUtteranceHash: Int? = null
-  private var currentSessionId: Long? = null
   private lateinit var langId: LanguageId
+  
+  // Service components
+  private lateinit var serviceConfig: ServiceConfiguration
+  private lateinit var translationPipeline: TranslationPipeline
+  private lateinit var audioProcessor: AudioProcessor
+  
+  private var currentSessionId: Long? = null
 
   override fun onCreate() {
     super.onCreate()
     ensureNotificationChannel()
+    
+    // Initialize core components
     settings = SettingsStore(this)
     db = AppDatabase.get(this)
     wear = WearBridge(this) { cmd ->
@@ -58,14 +59,22 @@ class TranslatorService : Service() {
         "stop" -> onStartCommand(Intent(ACTION_STOP), 0, 0)
       }
     }.also { it.start() }
-    tts = TextToSpeech(this) { }
     langId = LanguageId(this)
+    
+    // Initialize service components
+    serviceConfig = ServiceConfiguration(this)
+    audioProcessor = AudioProcessor()
   }
 
   override fun onDestroy() {
     runningJob?.cancel()
     wear.stop()
-    tts?.shutdown()
+    
+    // Cleanup service components
+    if (::translationPipeline.isInitialized) {
+      translationPipeline.shutdown()
+    }
+    
     stopForeground(STOP_FOREGROUND_REMOVE)
     super.onDestroy()
   }
@@ -133,104 +142,99 @@ class TranslatorService : Service() {
   private fun startWork() {
     if (runningJob?.isActive == true) return
     runningJob = serviceScope.launch {
-      val prefs = settings.data.firstOrNull()
-      val providerId = prefs?.get(Keys.provider) ?: "fake"
-      var targetLang = prefs?.get(Keys.targetLang) ?: "es"
-      val redact = prefs?.get(Keys.redact) ?: false
-      val ttsEnabled = prefs?.get(Keys.tts) ?: false
-      val autoDetect = prefs?.get(Keys.autoLangDetect) ?: true
-
-      val translator: TranslationProvider = try { MlKitTranslationProvider(this@TranslatorService) } catch (_: Throwable) { FakeTranslationProvider() }
-
-      currentSessionId = db.sessionDao().insert(Session(startedAt = System.currentTimeMillis()))
-
-      suspend fun handleText(text: String, isFinal: Boolean) {
-        // Optionally detect source language and adjust target voice
-        val detected = try { if (autoDetect && isFinal) langId.detect(text) else null } catch (_: Throwable) { null }
-        val sourceLang = detected
-        val clean = if (redact) Redactor.redact(text) else text
-        val translated = try { translator.translate(clean, source = sourceLang, target = targetLang) } catch (_: Throwable) { clean }
-        AppBus.captions.tryEmit(translated)
-        wear.broadcastCaption(translated)
-        db.utteranceDao().insert(
-          Utterance(sessionId = currentSessionId!!, ts = System.currentTimeMillis(), srcText = clean, dstText = translated, lang = targetLang)
+      try {
+        // Load configuration
+        val config = serviceConfig.loadConfig(settings)
+        
+        // Validate configuration
+        val issues = serviceConfig.validateConfig(config)
+        if (issues.isNotEmpty()) {
+          AppBus.captions.tryEmit("Configuration issues: ${issues.joinToString(", ")}")
+          delay(2000)
+          return@launch
+        }
+        
+        // Create providers
+        val translationProvider = serviceConfig.createTranslationProvider()
+        val asrProvider = serviceConfig.createAsrProvider(config.providerId)
+        
+        // Initialize translation pipeline
+        translationPipeline = TranslationPipeline(
+          context = this@TranslatorService,
+          translationProvider = translationProvider,
+          db = db,
+          wearBridge = wear,
+          langId = langId
         )
-        val translatedHash = translated.hashCode()
-        if (isFinal && ttsEnabled && translatedHash != lastUtteranceHash) {
-          tts?.speak(translated, TextToSpeech.QUEUE_FLUSH, null, "utt-${'$'}{System.currentTimeMillis()}")
-          lastUtteranceHash = translatedHash
-        }
-      }
-
-      // Configure TTS voice/language/pitch/rate before work
-      if (tts != null) {
-        val pitch = prefs?.get(Keys.ttsPitch) ?: 1.0f
-        val rate = prefs?.get(Keys.ttsRate) ?: 1.0f
-        try { tts?.setPitch(pitch) } catch (_: Throwable) {}
-        try { tts?.setSpeechRate(rate) } catch (_: Throwable) {}
-        try {
-          val loc = java.util.Locale.forLanguageTag(targetLang)
-          tts?.language = loc
-          val prefVoice = prefs?.get(Keys.ttsVoice)
-          val v = if (!prefVoice.isNullOrBlank()) tts?.voices?.firstOrNull { it.name == prefVoice }
-                  else tts?.voices?.firstOrNull { it.locale?.toLanguageTag()?.startsWith(targetLang, ignoreCase = true) == true }
-          if (v != null) tts?.voice = v
-        } catch (_: Throwable) {}
-      }
-
-      if (providerId == "whisper") {
-        if (!WhisperModelManager.isPresent(this@TranslatorService)) {
-          AppBus.captions.tryEmit("Whisper model missing. Download in app first.")
-          delay(1500)
-        } else {
-          AppBus.captions.tryEmit("Whisper JNI not included in this build")
-          delay(1500)
-        }
-      } else if (providerId == "system" && SpeechRecognizer.isRecognitionAvailable(this@TranslatorService)) {
-        val asr = SystemSpeechRecognizerProvider(this@TranslatorService).also { p ->
-          p.setListener { part -> serviceScope.launch { handleText(part.text, part.isFinal) } }
-        }
-        try {
-          asr.start(16_000, null)
-          while (isActive) delay(500)
-        } finally {
-          asr.close()
-        }
-      } else {
-        val asr = if (providerId == "whisper") WhisperCppProvider(this@TranslatorService) else FakeAsrProvider()
-        asr.setListener { part -> serviceScope.launch { handleText(part.text, part.isFinal) } }
-        val sampleRate = 16_000
-        val minBuf = AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
-        val record = AudioRecord.Builder()
-          .setAudioSource(MediaRecorder.AudioSource.VOICE_RECOGNITION)
-          .setAudioFormat(
-            AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_16BIT).setChannelMask(AudioFormat.CHANNEL_IN_MONO).setSampleRate(sampleRate).build()
-          ).setBufferSizeInBytes(minBuf * 2)
-          .build()
-        try {
-          asr.start(sampleRate, null)
-          record.startRecording()
-          val buf = ShortArray(1600)
-          val vad = SimpleVad()
-          while (isActive) {
-            val read = record.read(buf, 0, buf.size)
-            if (read > 0) {
-              val frame = buf.copyOf(read)
-              when (vad.analyze(frame)) {
-                SimpleVad.State.Start, SimpleVad.State.Speech -> asr.feedPcm(frame)
-                SimpleVad.State.End -> {
-                  val finalText = asr.finalizeStream()
-                  if (finalText.isNotBlank()) handleText(finalText, true)
-                  asr.start(sampleRate, null)
-                }
-                else -> {}
-              }
-            }
+        
+        val pipelineConfig = TranslationPipeline.Config(
+          targetLang = config.targetLang,
+          redact = config.redact,
+          ttsEnabled = config.ttsEnabled,
+          autoDetect = config.autoDetect,
+          ttsPitch = config.ttsPitch,
+          ttsRate = config.ttsRate,
+          ttsVoice = config.ttsVoice
+        )
+        
+        translationPipeline.initializeTts(pipelineConfig)
+        
+        // Start session
+        currentSessionId = db.sessionDao().insert(Session(startedAt = System.currentTimeMillis()))
+        
+        // Handle different provider types
+        when {
+          config.providerId == "whisper" && !WhisperModelManager.isPresent(this@TranslatorService) -> {
+            AppBus.captions.tryEmit("Whisper model missing. Download in app first.")
+            delay(1500)
           }
-        } finally {
-          record.stop(); record.release(); asr.close()
+          
+          config.providerId == "system" && SpeechRecognizer.isRecognitionAvailable(this@TranslatorService) -> {
+            handleSystemSpeechRecognizer(asrProvider as SystemSpeechRecognizerProvider, pipelineConfig)
+          }
+          
+          else -> {
+            handleAudioRecording(asrProvider, pipelineConfig)
+          }
         }
+        
+      } catch (e: Exception) {
+        Log.e(TAG, "Error in startWork", e)
+        AppBus.captions.tryEmit("Service error: ${e.message}")
       }
+    }
+  }
+  
+  private suspend fun handleSystemSpeechRecognizer(
+    asr: SystemSpeechRecognizerProvider,
+    pipelineConfig: TranslationPipeline.Config
+  ) {
+    asr.setListener { part -> 
+      serviceScope.launch { 
+        translationPipeline.processText(part.text, part.isFinal, currentSessionId!!, pipelineConfig)
+      }
+    }
+    
+    try {
+      asr.start(16_000, null)
+      while (serviceScope.coroutineContext.isActive) delay(500)
+    } finally {
+      asr.close()
+    }
+  }
+  
+  private suspend fun handleAudioRecording(
+    asr: AsrProvider,
+    pipelineConfig: TranslationPipeline.Config
+  ) {
+    asr.setListener { part ->
+      serviceScope.launch {
+        translationPipeline.processText(part.text, part.isFinal, currentSessionId!!, pipelineConfig)
+      }
+    }
+    
+    audioProcessor.processAudio(asr, serviceScope.coroutineContext) { finalText ->
+      translationPipeline.processText(finalText, true, currentSessionId!!, pipelineConfig)
     }
   }
 
