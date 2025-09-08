@@ -92,12 +92,12 @@ private fun handleStartService(
         }
     }
 
-    // Check microphone permission for system provider
-    if (provider == "system") {
+    // Check microphone permission for providers that record audio
+    if (provider == "system" || provider == "whisper") {
         val micGranted = ContextCompat.checkSelfPermission(
             context, Manifest.permission.RECORD_AUDIO
         ) == PackageManager.PERMISSION_GRANTED
-        
+
         if (!micGranted) {
             micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
             return
