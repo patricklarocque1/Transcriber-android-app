@@ -23,10 +23,10 @@ Artifacts are under `app/build/outputs/apk/**` and `wear/build/outputs/apk/**`.
 
 Phone:
 - Open `WristLingo` and configure at the top:
-  - ASR Provider: `Fake` (no mic) or `System` (Android SpeechRecognizer, uses mic).
+  - ASR Provider: `System` (Android SpeechRecognizer, uses mic). Whisper placeholder is available but guarded until model is present.
   - Target language (e.g., `es`).
   - Toggles: Redact PII, TTS.
-- Tap Start. On Android 13+, allow Notifications. If you chose `System`, also allow Microphone.
+- Tap Start. On Android 13+, allow Notifications and Microphone permissions.
 - You’ll see a persistent notification and live captions. Tap Stop to end.
 
 Wear:
@@ -70,9 +70,7 @@ Notes:
 
 ## Implemented features
 
-- Foreground service with two modes:
-  - Fake ASR (no mic) + AudioRecord demo path
-  - System SpeechRecognizer ASR (mic)
+- Foreground service using System SpeechRecognizer ASR (mic)
 - Translation via ML Kit with on-demand model download/caching.
 - Room database for Sessions and Utterances; optional PII redaction.
 - Export sessions (JSONL) via the "Export Sessions (JSONL)" launcher icon or the in-app button.

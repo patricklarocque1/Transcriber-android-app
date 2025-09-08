@@ -5,6 +5,7 @@ plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
+  id("jacoco")
 }
 
 // Optional release signing driven by keystore.properties (not committed)
@@ -98,4 +99,22 @@ kotlin {
   compilerOptions {
     jvmTarget.set(JvmTarget.JVM_17)
   }
+}
+
+// Simple Jacoco setup for wear tests (no threshold enforced)
+tasks.withType<Test>().configureEach {
+  useJUnit()
+  finalizedBy(tasks.named("jacocoTestReport"))
+}
+
+jacoco { toolVersion = "0.8.10" }
+
+tasks.register<JacocoReport>("jacocoTestReport") {
+  dependsOn(tasks.named("testDebugUnitTest"))
+  reports { xml.required.set(true); html.required.set(true) }
+  val javaTree = fileTree("${project.buildDir}/intermediates/javac/debug")
+  val kotlinTree = fileTree("${project.buildDir}/tmp/kotlin-classes/debug")
+  classDirectories.setFrom(files(javaTree, kotlinTree))
+  sourceDirectories.setFrom(files("src/main/java"))
+  executionData.setFrom(fileTree(buildDir) { include("jacoco/testDebugUnitTest.exec") })
 }

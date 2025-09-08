@@ -6,6 +6,7 @@ plugins {
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.ksp)
+  id("jacoco")
 }
 
 // Optional release signing driven by keystore.properties (not committed)
@@ -129,6 +130,8 @@ dependencies {
   testImplementation("androidx.room:room-testing:2.6.1")
   testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
   testImplementation("androidx.arch.core:core-testing:2.2.0")
+  testImplementation("io.mockk:mockk:1.13.12")
+  testImplementation("androidx.compose.ui:ui-test-junit4:1.7.4")
 }
 
 kotlin {
@@ -136,4 +139,57 @@ kotlin {
   compilerOptions {
     jvmTarget.set(JvmTarget.JVM_17)
   }
+}
+
+// Jacoco configuration
+tasks.withType<Test>().configureEach {
+  useJUnit()
+  finalizedBy(tasks.named("jacocoTestReport"))
+}
+
+jacoco {
+  toolVersion = "0.8.10"
+}
+
+tasks.register<JacocoReport>("jacocoTestReport") {
+  dependsOn(tasks.named("testDebugUnitTest"))
+  reports {
+    xml.required.set(true)
+    html.required.set(true)
+  }
+  val debugTree = fileTree("${project.buildDir}/intermediates/javac/debug") {
+    exclude("**/R.class", "**/R$*.class", "**/BuildConfig.*", "**/Manifest*.*")
+  }
+  val kotlinDebugTree = fileTree("${project.buildDir}/tmp/kotlin-classes/debug") {
+    exclude("**/R.class", "**/R$*.class", "**/BuildConfig.*", "**/Manifest*.*")
+  }
+  classDirectories.setFrom(files(debugTree, kotlinDebugTree))
+  sourceDirectories.setFrom(files("src/main/java"))
+  executionData.setFrom(fileTree(buildDir) {
+    include(
+      "jacoco/testDebugUnitTest.exec",
+      "outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec"
+    )
+  })
+}
+
+tasks.register("jacocoTestCoverageVerification", JacocoCoverageVerification::class) {
+  dependsOn(tasks.named("jacocoTestReport"))
+  violationRules {
+    rule {
+      limit {
+        minimum = "0.90".toBigDecimal()
+      }
+    }
+  }
+  executionData.setFrom(fileTree(buildDir) {
+    include(
+      "jacoco/testDebugUnitTest.exec",
+      "outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec"
+    )
+  })
+  classDirectories.setFrom(files(
+    fileTree("${project.buildDir}/intermediates/javac/debug"),
+    fileTree("${project.buildDir}/tmp/kotlin-classes/debug")
+  ))
 }

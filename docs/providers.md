@@ -13,8 +13,7 @@ interface AsrProvider : Closeable {
 Implementations:
 
 * `SystemSpeechRecognizerProvider` (wraps Android SpeechRecognizer with partial results).
-* `WhisperCppProvider` (JNI bridge; Tiny/Small models selectable; offline).
-* `CloudSttV2Provider` (REST; disabled unless flag set).
+* `WhisperCppProvider` (JNI bridge; Tiny/Small models selectable; offline). Guarded; not default.
 
 Notes:
 - `WhisperCppProvider` is scaffolded but not active in this build. To enable:

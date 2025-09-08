@@ -24,15 +24,27 @@ object Keys {
   val autoLangDetect = booleanPreferencesKey("auto_lang_detect")
 }
 
-class SettingsStore(private val context: Context) {
-  val data: Flow<Preferences> = context.dataStore.data
+interface SettingsApi {
+  val data: Flow<Preferences>
+  suspend fun setProvider(id: String)
+  suspend fun setTargetLang(lang: String)
+  suspend fun setRedact(enabled: Boolean)
+  suspend fun setTts(enabled: Boolean)
+  suspend fun setTtsPitch(value: Float)
+  suspend fun setTtsRate(value: Float)
+  suspend fun setTtsVoice(name: String?)
+  suspend fun setAutoLangDetect(enabled: Boolean)
+}
 
-  suspend fun setProvider(id: String) = context.dataStore.edit { it[Keys.provider] = id }
-  suspend fun setTargetLang(lang: String) = context.dataStore.edit { it[Keys.targetLang] = lang }
-  suspend fun setRedact(enabled: Boolean) = context.dataStore.edit { it[Keys.redact] = enabled }
-  suspend fun setTts(enabled: Boolean) = context.dataStore.edit { it[Keys.tts] = enabled }
-  suspend fun setTtsPitch(value: Float) = context.dataStore.edit { it[Keys.ttsPitch] = value }
-  suspend fun setTtsRate(value: Float) = context.dataStore.edit { it[Keys.ttsRate] = value }
-  suspend fun setTtsVoice(name: String?) = context.dataStore.edit { if (name == null) it.remove(Keys.ttsVoice) else it[Keys.ttsVoice] = name }
-  suspend fun setAutoLangDetect(enabled: Boolean) = context.dataStore.edit { it[Keys.autoLangDetect] = enabled }
+class SettingsStore(private val context: Context) : SettingsApi {
+  override val data: Flow<Preferences> = context.dataStore.data
+
+  override suspend fun setProvider(id: String) = context.dataStore.edit { it[Keys.provider] = id }
+  override suspend fun setTargetLang(lang: String) = context.dataStore.edit { it[Keys.targetLang] = lang }
+  override suspend fun setRedact(enabled: Boolean) = context.dataStore.edit { it[Keys.redact] = enabled }
+  override suspend fun setTts(enabled: Boolean) = context.dataStore.edit { it[Keys.tts] = enabled }
+  override suspend fun setTtsPitch(value: Float) = context.dataStore.edit { it[Keys.ttsPitch] = value }
+  override suspend fun setTtsRate(value: Float) = context.dataStore.edit { it[Keys.ttsRate] = value }
+  override suspend fun setTtsVoice(name: String?) = context.dataStore.edit { if (name == null) it.remove(Keys.ttsVoice) else it[Keys.ttsVoice] = name }
+  override suspend fun setAutoLangDetect(enabled: Boolean) = context.dataStore.edit { it[Keys.autoLangDetect] = enabled }
 }

@@ -89,7 +89,15 @@ jobs:
 
       - name: Run unit tests
         run: |
-          ./gradlew --stacktrace --no-daemon test
+          ./gradlew --stacktrace --no-daemon :app:testDebugUnitTest :wear:testDebugUnitTest
+
+      - name: Generate coverage reports
+        run: |
+          ./gradlew --stacktrace --no-daemon :app:jacocoTestReport :wear:jacocoTestReport
+
+      - name: Enforce app coverage >= 90%
+        run: |
+          ./gradlew --stacktrace --no-daemon :app:jacocoTestCoverageVerification
 
       - name: Run instrumentation tests (if emulator available)
         continue-on-error: true
@@ -109,6 +117,10 @@ jobs:
           path: |
             **/build/reports/tests/
             **/build/test-results/
+            app/build/reports/jacoco/jacocoTestReport/html/
+            app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
+            wear/build/reports/jacoco/jacocoTestReport/html/
+            wear/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
 
       - name: Upload APKs (debug)
         uses: actions/upload-artifact@v4

@@ -11,16 +11,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.example.wristlingo.settings.SettingsStore
+import com.example.wristlingo.settings.SettingsApi
 import kotlinx.coroutines.launch
 
 /**
- * UI component for selecting ASR provider (Fake, System, Whisper)
+ * UI component for selecting ASR provider (System, Whisper)
  */
 @Composable
 fun ProviderSelector(
     currentProvider: String,
-    store: SettingsStore,
+    store: SettingsApi,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -33,14 +33,6 @@ fun ProviderSelector(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            OutlinedButton(
-                onClick = { 
-                    scope.launch { store.setProvider("fake") }
-                }
-            ) { 
-                Text("Fake") 
-            }
-            
             OutlinedButton(
                 onClick = { 
                     scope.launch { store.setProvider("system") }
