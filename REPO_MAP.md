@@ -43,9 +43,9 @@ Transcriber-android-app/
 **Purpose:** uses Jetpack Compose UI
 
 **Key Classes:** MainActivity
-**Key Functions:** onCreate, send, WearScreen, onMessageReceived, onDestroy
+**Key Functions:** WearScreen, send, onCreate, onDestroy, onMessageReceived
 **Entrypoints:** MainActivity
-**External Dependencies:** androidx.test:core:1.5.0, compose.ui, wear.compose.material
+**External Dependencies:** compose.ui, play.services.wearable, org.robolectric:robolectric:4.11.1
 **Tests:** 1 test files
 
 ### wristlingo
@@ -55,10 +55,10 @@ Transcriber-android-app/
 
 **Purpose:** contains background services; implements provider pattern; includes database layer; uses Jetpack Compose UI; integrates Whisper ASR; includes native C++ code
 
-**Key Classes:** App, AppBus, WearBridge, MainActivity, SimpleVad
-**Key Functions:** SettingsPanel, ExportButton, PreviewHome, ProviderSelector, start
+**Key Classes:** App, SimpleVad, State, WearBridge, TranslatorService
+**Key Functions:** StatusHeader, handleStartService, onStop, AsrStateIndicator, onMessageReceived
 **Entrypoints:** MainActivity
-**External Dependencies:** org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1, google.material, androidx.room.runtime
+**External Dependencies:** androidx.room.ktx, androidx.room:room-testing:2.6.1, androidx.lifecycle.runtime.ktx
 **Internal Dependencies:** wear
 **Tests:** 5 test files
 
@@ -125,14 +125,13 @@ The app supports three build flavors for different usage scenarios:
 Files requiring attention due to size or complexity:
 
 - **app/src/androidTest/java/com/example/wristlingo/integration/EndToEndDataFlowTest.kt** (314 LOC) - large file
-- **app/src/main/java/com/example/wristlingo/TranslatorService.kt** (258 LOC) - large file *(refactored for better modularity)*
+- **app/src/androidTest/java/com/example/wristlingo/integration/EndToEndDataFlowTest.kt** (314 LOC) - large file
+- **app/src/main/java/com/example/wristlingo/TranslatorService.kt** (258 LOC) - large file
+- **app/src/main/java/com/example/wristlingo/TranslatorService.kt** (258 LOC) - large file
 - **app/src/androidTest/java/com/example/wristlingo/integration/PhoneWearIntegrationTest.kt** (249 LOC) - large file
-- **app/src/main/java/com/example/wristlingo/MainActivity.kt** (210 LOC) - large file *(refactored with extracted UI components)*
-
-**Refactoring Improvements:**
-- `TranslatorService` now uses extracted service components (`AudioProcessor`, `TranslationPipeline`, `ServiceConfiguration`)
-- `MainActivity` now uses modular UI components (`ProviderSelector`, `SettingsPanel`, `ServiceControls`)
-- New hotspots are primarily comprehensive test files, which is expected and beneficial for code quality
+- **app/src/androidTest/java/com/example/wristlingo/integration/PhoneWearIntegrationTest.kt** (249 LOC) - large file
+- **app/src/main/java/com/example/wristlingo/MainActivity.kt** (210 LOC) - large file
+- **app/src/main/java/com/example/wristlingo/MainActivity.kt** (210 LOC) - large file
 
 ## Security & Privacy
 
@@ -160,47 +159,15 @@ Files requiring attention due to size or complexity:
 - Artifacts uploaded for manual testing
 - Optional signed releases on tags with proper secrets
 
-## Recent Improvements (v0.2.0)
-
-**Whisper.cpp Integration:**
-- Complete JNI bridge with C++ context management (`whisper_context.cpp`, `whisperjni.cpp`)
-- Kotlin wrapper with lifecycle management and error handling
-- Offline speech recognition support for the `offline` build flavor
-- Native library loading with graceful fallback
-- Fixed memory leak in JNI shared_ptr lifecycle management
-
-**Code Refactoring:**
-- Extracted service components for better modularity:
-  - `AudioProcessor`: Audio recording and VAD processing
-  - `TranslationPipeline`: Text processing, translation, and TTS
-  - `ServiceConfiguration`: Provider creation and validation
-- Modular UI components for better maintainability:
-  - `ProviderSelector`: ASR provider selection UI
-  - `SettingsPanel`: App settings configuration
-  - `ServiceControls`: Service start/stop with permission handling
-
-**Enhanced Testing:**
-- Comprehensive unit tests for Room DAOs and providers
-- End-to-end integration tests for phone↔wear data flow
-- Instrumentation tests for wear module
-- Repository structure validation in CI
-
-**CI/CD Improvements:**
-- Repository structure validation job
-- NDK support for native builds
-- Test report archiving
-- All build flavors tested in CI
-
 ## Extension Points
 
 **Adding New Providers:**
 1. Implement `AsrProvider` or `TranslationProvider` interface
-2. Add provider to DI configuration via `ServiceConfiguration`
+2. Add provider to DI configuration
 3. Update settings UI for selection
 
 **Adding New Features:**
 - Export formats: Extend `Export.kt` with new serializers
 - Audio processing: Add VAD or noise reduction in `audio/`
-- UI components: Leverage modular Compose architecture
+- UI components: Leverage Compose architecture
 - Data Layer: Add new message types in `WearBridge.kt`
-- Service components: Extend `TranslationPipeline` or `AudioProcessor`
