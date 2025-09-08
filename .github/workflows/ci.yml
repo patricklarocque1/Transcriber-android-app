@@ -137,9 +137,21 @@ jobs:
         with:
           api-level: ${{ env.ANDROID_COMPILE_SDK }}
           build-tools: ${{ env.ANDROID_BUILD_TOOLS }}
+          ndk: ${{ env.ANDROID_NDK_VERSION }}
       
       - name: Accept Android SDK licenses
         run: yes | sdkmanager --licenses || true
+      
+      - name: Install additional SDK components
+        run: |
+          sdkmanager "ndk;${{ env.ANDROID_NDK_VERSION }}"
+          sdkmanager "cmake;3.22.1"
+      
+      - name: Set up Android environment
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/${{ env.ANDROID_NDK_VERSION }}" >> $GITHUB_ENV
       
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
@@ -183,9 +195,21 @@ jobs:
         with:
           api-level: ${{ env.ANDROID_COMPILE_SDK }}
           build-tools: ${{ env.ANDROID_BUILD_TOOLS }}
+          ndk: ${{ env.ANDROID_NDK_VERSION }}
       
       - name: Accept Android SDK licenses
         run: yes | sdkmanager --licenses || true
+      
+      - name: Install additional SDK components
+        run: |
+          sdkmanager "ndk;${{ env.ANDROID_NDK_VERSION }}"
+          sdkmanager "cmake;3.22.1"
+      
+      - name: Set up Android environment
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/${{ env.ANDROID_NDK_VERSION }}" >> $GITHUB_ENV
       
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
@@ -218,7 +242,7 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Set up Python 3.11
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       
@@ -278,9 +302,21 @@ jobs:
         with:
           api-level: ${{ matrix.api-level }}
           build-tools: ${{ env.ANDROID_BUILD_TOOLS }}
+          ndk: ${{ env.ANDROID_NDK_VERSION }}
       
       - name: Accept Android SDK licenses
         run: yes | sdkmanager --licenses || true
+      
+      - name: Install additional SDK components
+        run: |
+          sdkmanager "ndk;${{ env.ANDROID_NDK_VERSION }}"
+          sdkmanager "cmake;3.22.1"
+      
+      - name: Set up Android environment
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/${{ env.ANDROID_NDK_VERSION }}" >> $GITHUB_ENV
       
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
@@ -288,7 +324,7 @@ jobs:
           cache-read-only: true
       
       - name: AVD cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         id: avd-cache
         with:
           path: |
@@ -361,6 +397,17 @@ jobs:
       
       - name: Accept Android SDK licenses
         run: yes | sdkmanager --licenses || true
+      
+      - name: Install additional SDK components
+        run: |
+          sdkmanager "ndk;${{ env.ANDROID_NDK_VERSION }}"
+          sdkmanager "cmake;3.22.1"
+      
+      - name: Set up Android environment
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/${{ env.ANDROID_NDK_VERSION }}" >> $GITHUB_ENV
       
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
